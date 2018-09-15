@@ -66,4 +66,13 @@ print(ld)
 
 
 # 执行系统命令
+# 可使用subprocess进行代替
 rst = os.system("ls")
+
+# 获取环境变量
+rst = os.getenv("PATH")
+print(rst)
+
+print(os.pardir)
+print(os.curdir)
+
