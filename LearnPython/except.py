@@ -76,3 +76,46 @@ print(rst)
 print(os.pardir)
 print(os.curdir)
 
+#os.path
+# abspath()将路径装环卫绝对路径
+# join() 将多个路径组合成一个路径
+
+import os.path as op
+# 将路径进行拆分，拆分为文件名和路径
+#t = op.split("/home/liyubo/test.md")
+#print(t)
+
+# isdir() 判断其是否为一个目录
+# exists() 判断文件是否存在
+
+# shutil 模块
+# shutil.copy(原路径，目标路径)
+# copy2 尽可能保留文件信息
+# move(源路径，目标路径)
+
+# 归档和压缩
+# make_archive(归档后的目录和文件名，后缀，需要归档的文件夹)
+# make_unpack_archive 反归档
+import shutil
+#shutil.make_archive()
+
+# 压缩文件
+import zipfile
+# 压缩
+#zf = zipfile.ZipFile("./test")
+# 解压 extractall
+
+# 随机数
+import random
+# 生成0-1 的随机小数
+print(random.random())
+
+l1 = [i for i in range(10)]
+print(l1)
+
+# 打乱排序
+random.shuffle(l1)
+print(l1)
+
+# 随机生成[0，100]的随机数
+print(random.randint(0, 100))
