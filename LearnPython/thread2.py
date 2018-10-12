@@ -17,9 +17,10 @@ def loop2(in1,in2):
 
 def main():
     print("start at",time.ctime())
+    print("start at")
+    print(time.ctime())
     thread.start_new_thread(loop1, ("a",))
     thread.start_new_thread(loop2, ("b", "c"))
-
 
     print("all enf",time.ctime())
 

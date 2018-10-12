@@ -62,7 +62,7 @@ s = "asdadfagafgatgr"
 print(list(s))
 
 # 复杂变量传地址，简单变量传值
-ll = [1, 2, 3, 4]
+ll = [1,2,3,4]
 ll.append(100)
 print(ll)
 ll.insert(3,300)
