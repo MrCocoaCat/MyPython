@@ -1,23 +1,19 @@
 
-try:
-    num = 0
-    ret = 100/num
-    print("结果为{}".format(ret))
+#自定义一个异常,继承Exception
 
-except ZeroDivisionError as e:
-    print(e)
-
-
-#自定义一个异常,继承ValueError
-
-class DanaError(ValueError):
+class DanaError(Exception):
+    ''' my define error  '''
     pass
 
 
 try:
     print("test")
     # 手动引发异常
-    raise DanaError
+    print("fffff test-----")
+    raise DanaError("raise ererer:%d" )
+
+except DanaError as e:
+    print("DanaError")
 except NameError as e:
     print("NameError")
 except ValueError as e:
@@ -26,6 +22,9 @@ finally:
     print("最后执行")
 
 # 自定义异常，方便扩展
+
+
+
 
 
 # 日历模块
