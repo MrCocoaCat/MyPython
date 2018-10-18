@@ -6,8 +6,10 @@ Copyright 2011, Hannu Valtonen <hannu.valtonen@ormod.com>
 from ctypes import CDLL, c_char_p, c_size_t, c_void_p, c_char, c_int, c_long, \
     c_ulong, create_string_buffer, byref, Structure, c_uint64, c_ubyte, \
     pointer, CFUNCTYPE, c_int64, c_uint32, c_uint8
+	
 from ctypes.util import find_library
 import ctypes
+
 import errno
 import threading
 import time
@@ -23,6 +25,7 @@ LIBRADOS_OP_FLAG_FADVISE_WILLNEED   = 0x10
 LIBRADOS_OP_FLAG_FADVISE_DONTNEED   = 0x20
 LIBRADOS_OP_FLAG_FADVISE_NOCACHE    = 0x40
 
+# 继承系统的Exception
 class Error(Exception):
     """ `Error` class, derived from `Exception` """
     pass
@@ -83,6 +86,9 @@ class TimedOut(Error):
     """ `TimedOut` class, derived from `Error` """
     pass
 
+	
+# 将librados返回值转换为Python形式的错误，
+# 该函数返回一个errno子类
 def make_ex(ret, msg):
     """
     Translate a librados return code into an exception.
@@ -110,6 +116,10 @@ def make_ex(ret, msg):
         return errors[ret](msg)
     else:
         return Error(msg + (": errno %s" % errno.errorcode[ret]))
+
+# 继承于Structure类，表明其为结构体，
+# 自定义的结构体类中必须定义一个名为fields的列表变量, 其中每个元素是一个tuple,
+# 定义了结构体每个数据单元信息, 格式是(‘变量名字符串’, 变量数据类型 [, 比特数])	
 
 class rados_pool_stat_t(Structure):
     """ Usage information for a pool """
@@ -147,6 +157,7 @@ class Version(object):
     def __str__(self):
         return "%d.%d.%d" % (self.major, self.minor, self.extra)
 
+# 继承threading.Thread类，其为设置函数
 class RadosThread(threading.Thread):
     def __init__(self, target, args=None):
         self.args = args
@@ -159,6 +170,7 @@ class RadosThread(threading.Thread):
 # time in seconds between each call to t.join() for child thread
 POLL_TIME_INCR = 0.5
 
+# 运行RadosThread线程函数，并做判断
 def run_in_thread(target, args, timeout=0):
     interrupt = False
 
@@ -196,6 +208,7 @@ def run_in_thread(target, args, timeout=0):
 
 class Rados(object):
     """librados python wrapper"""
+	
     def require_state(self, *args):
         """
         Checks if the Rados object is in a special state
@@ -206,12 +219,17 @@ class Rados(object):
            return
         raise RadosStateError("You cannot perform that operation on a \
 Rados object in state %s." % self.state)
-
+	
+	# 构造函数
     def __init__(self, rados_id=None, name=None, clustername=None,
                  conf_defaults=None, conffile=None, conf=None, flags=0):
+				 
+		# 查找rados函数库
         library_path  = find_library('rados')
         # maybe find_library can not find it correctly on all platforms,
         # so fall back to librados.so.2 in such case.
+		
+		# 设置librados函数库
         self.librados = CDLL(library_path if library_path is not None else 'librados.so.2')
 
         self.parsed_args = []
@@ -235,14 +253,20 @@ Rados object in state %s." % self.state)
             name = 'client.admin'
         if clustername is None:
             clustername = 'ceph'
+		#调用librados函数的rados_create2函数
         ret = run_in_thread(self.librados.rados_create2,
                             (byref(self.cluster), c_char_p(clustername),
                             c_char_p(name), c_uint64(flags)))
-
+							
+		
         if ret != 0:
             raise Error("rados_initialize failed with error code: %d" % ret)
+			
+		# 将状态设置为 configuring
         self.state = "configuring"
+		
         # order is important: conf_defaults, then conffile, then conf
+		# 进行变量设置
         if conf_defaults:
             for key, value in conf_defaults.iteritems():
                 self.conf_set(key, value)
@@ -282,6 +306,7 @@ Rados object in state %s." % self.state)
         major = c_int(0)
         minor = c_int(0)
         extra = c_int(0)
+		# byref(n)返回的相当于C的指针右值&n
         run_in_thread(self.librados.rados_version,
                       (byref(major), byref(minor), byref(extra)))
         return Version(major.value, minor.value, extra.value)
@@ -296,6 +321,8 @@ Rados object in state %s." % self.state)
         self.require_state("configuring", "connected")
         if path is not None and not isinstance(path, str):
             raise TypeError('path must be a string')
+			
+		# 调用librados函数的rados_conf_read_file函数
         ret = run_in_thread(self.librados.rados_conf_read_file,
                             (self.cluster, c_char_p(path)))
         if (ret != 0):
@@ -423,8 +450,11 @@ Rados object in state %s." % self.state)
         Connect to the cluster.  Use shutdown() to release resources.
         """
         self.require_state("configuring")
+		
+		# 调用rados_connect函数进行连接
         ret = run_in_thread(self.librados.rados_connect, (self.cluster,),
                             timeout)
+		# 对返回值进行判断，利用Error函数，将C函数返回值转换为python值
         if (ret != 0):
             raise make_ex(ret, "error connecting to the cluster")
         self.state = "connected"
