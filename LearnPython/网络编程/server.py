@@ -13,16 +13,17 @@ def serverFunc():
     # 等待对方发消息
     # recvfrom 返回值是一个tuple
     # 第一表示数据，后一项表示地址
-
-    data,addr=sock.recvfrom()
+    # 500 指缓冲区大小
+    data,addr=sock.recvfrom(500)
     print(type(data))
     print(data)
 
+    #将byte 数据反编码为str
     text = data.decode()
     print(type(text))
     print(text)
 
-    rsp = "back data"
+    rsp = "back data "
     # 编码为bytes 格式
     data = rsp.encode()
     sock.sendto(data,addr)
