@@ -31,6 +31,11 @@ def serverFunc():
 if __name__ == '__main__':
 
     print("Begin server")
-    serverFunc()
+    while 1:
+        try:
+            serverFunc()
+        except Exception as e:
+            print(e)
+
     print("Ending server")
 
