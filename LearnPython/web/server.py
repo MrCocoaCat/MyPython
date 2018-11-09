@@ -1,3 +1,4 @@
+# coding=utf8
 # server.py
 # 从wsgiref模块导入:
 from wsgiref.simple_server import make_server
