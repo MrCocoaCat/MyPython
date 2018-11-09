@@ -15,6 +15,7 @@ class ClockProcess(multiprocessing.Process):
             print(os.getppid())
             sleep(self.interval)
 
+
 if __name__=='__main__':
     p= ClockProcess(3)
     print(os.getpid())
