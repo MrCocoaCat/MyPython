@@ -2,20 +2,33 @@
 import os
 import paramiko
 
+# 每只队伍之间得分点不同
+
 def ssh(sys_ip,cmds):
-    #创建ssh客户端
+    """
+    :param sys_ip:执行命令的服务器IP
+    :param cmds: 执行的命令
+    :return: 执行命令结果
+    """
+
+    # 创建ssh客户端
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostname=sys_ip, username="root")
     # 执行命令
     stdin, stdout, stderr = ssh.exec_command(cmds)
-    #获取命令执行结果,返回的数据是一个list
-    #print "doing cmd ",cmds
+    # 获取命令执行结果,返回的数据是一个list
+    # print "doing cmd ",cmds
     result = stdout.readlines()
     ssh.close()
     return result
 
-def gencomm(hostip,iphead):
+def gencomm(hostip, iphead):
+    """
+    :param hostip:执行命令的服务器IP
+    :param iphead: 虚拟机IP前缀
+    :return:
+    """
     print hostip
     for i in range(1,6):
             for j in range(i,6):
