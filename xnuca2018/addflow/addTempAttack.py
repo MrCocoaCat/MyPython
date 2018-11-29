@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2018/11/28 16:23
-# @Author  : liyubo
-# @Email   : mat_wu@163.com
-# @File    : addTempAttack.py
+
 
 
 import os
 import sys
 import paramiko
-
+import time
 def ssh(sys_ip,cmds):
     """
     :param sys_ip:执行命令的服务器IP
@@ -37,7 +35,7 @@ def delcomm(hostip,attckip):
     dest="10.121.100.0/24"
     src=attckip
     delofcmd="ip,nw_src="+src+",nw_dst="+dest
-    cmds ="ovs-ofctl del-flow br_unicom "+"\""+delofcmd+"\""
+    cmds ="ovs-ofctl del-flows br_unicom "+"\""+delofcmd+"\""
     print cmds
         #result=ssh(hostip,cmds)
         #print result
@@ -50,7 +48,7 @@ def addcomm(hostip,attckip):
     print hostip
     dest="10.121.100.0/24"
     src=attckip
-    addofcmd="ip,nw_src="+src+",nw_dst="+dest+",priority=2,action=drop"
+    addofcmd="ip,nw_src="+src+",nw_dst="+dest+",priority=5,action=drop"
     cmds ="ovs-ofctl add-flow br_unicom "+"\""+addofcmd+"\""
     print cmds
         #result=ssh(hostip,cmds)
@@ -76,4 +74,9 @@ def main(argv):
 
 
 if __name__ == '__main__':
+    starttime = time.time()
     main(sys.argv[1])
+    endtime = time.time()
+    print "---------------------"
+    print "using",str(endtime - starttime)
+    print "==================== "
