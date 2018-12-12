@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2018/11/28 16:23
 
-
-
+# 优先级为5
+# 设置临时规则，是所有的攻击点均不能访问得分点
+# 通过网段进行屏蔽
+# 程序参数为1时为添加，0为删除
 import os
 import sys
 import paramiko
@@ -30,11 +32,12 @@ def delcomm(team_nu):
     print "del-flows to team%s on %s" % (team_nu, host_ip)
     attck_ip = "10.121.21." + str(team_nu)
     all_point = "10.121.100.0/24"
+
     ofcmd="ip,nw_src="+attck_ip+",nw_dst="+all_point
     del_cmds ="ovs-ofctl del-flows br_unicom "+"\""+ofcmd+"\""
     print del_cmds
-    #result=ssh(hostip,cmds)
-    #print result
+    result=ssh(host_ip,del_cmds)
+    print result
 
 def addcomm(team_nu):
     host_ip = "192.168.0." + str(100 + team_nu)
@@ -45,8 +48,8 @@ def addcomm(team_nu):
     ofcmd="ip,nw_src="+attck_ip+",nw_dst="+all_point+",priority=5,action=drop"
     add_cmds ="ovs-ofctl add-flow br_unicom "+"\""+ofcmd+"\""
     print add_cmds
-    #result=ssh(host_ip,add_cmds)
-    #print result
+    result=ssh(host_ip,add_cmds)
+    print result
 
 def main(argv):
     if argv == "1":
@@ -54,18 +57,21 @@ def main(argv):
         for i in range(1,21):
                 addcomm(team_nu=i)
                 print "*" * 20
+        print "---------------------"
+        print "finish add temp rule,now attack can access point"
+
     elif argv == "0":
         print "begin del ..."
         for i in range(1,21):
                 delcomm(team_nu=i)
                 print "*" * 20
-
+        print "---------------------"
+        print "finish del temp rule ,now attack cannot access point"
 
 if __name__ == '__main__':
-    starttime = time.time()
+    start_time = time.time()
     main(sys.argv[1])
-    endtime = time.time()
-    print "---------------------"
-    print "finish,using",str(endtime - starttime)
+    end_time = time.time()
+    print "finish ,using",str(end_time - start_time)
     print "you can using \"ovs-ofctl dump-flows\" to see ACL"
 

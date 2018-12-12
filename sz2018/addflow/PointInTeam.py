@@ -2,7 +2,8 @@
 import os
 import paramiko
 
-# 每只队伍之间得分点不同
+# 每只队伍之间得分点不通
+# 优先级2
 
 def ssh(sys_ip,cmds):
     """

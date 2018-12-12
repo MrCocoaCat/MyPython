@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# 优先级3
+# 添加攻击点无法访问本队得分点规则
 import os
 import sys
 import paramiko
@@ -32,8 +34,8 @@ def add_attack_to_point(team_nu):
         ofcmd="ip,nw_src="+attack_ip+",nw_dst="+point_ip+",priority=3,action=drop"
         cmds ="ovs-ofctl add-flow br_unicom "+"\""+ofcmd+"\""
         print cmds
-        #result=ssh(host_ip,cmds)
-        #print result
+        result=ssh(host_ip,cmds)
+        print result
 
 def del_attack_to_point(team_nu):
 
@@ -45,8 +47,8 @@ def del_attack_to_point(team_nu):
         ofcmd="ip,nw_src="+attack_ip+",nw_dst="+point_ip
         cmds ="ovs-ofctl del-flows br_unicom "+"\""+ofcmd+"\""
         print cmds
-        #result=ssh(host_ip,cmds)
-        #print result
+        result = ssh(host_ip, cmds)
+        print result
 
 def main(argv):
     if argv == "0":
@@ -66,5 +68,6 @@ if __name__ == '__main__':
     main(sys.argv[1])
     end_time = time.time()
     print "---------------------"
-    print "using",str(end_time - start_time)
+    print "finish attack_to_point,using", str(end_time - start_time)
+    print "you can using \"ovs-ofctl dump-flows\" to see ACL"
     print "==================== "
