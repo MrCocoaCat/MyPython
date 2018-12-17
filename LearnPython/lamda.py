@@ -1,9 +1,9 @@
-
+# -*- coding: UTF-8 -*-
 stm = lambda x: 100 * x
 a = stm(4)
 print(a)
 
-stm2 = lambda x,y,z:x+10*y+z
+stm2 = lambda x, y, z:x+10*y+z
 b = stm2(1, 2, 3)
 print(b)
 
