@@ -1,3 +1,4 @@
+
 # encoding:utf-8
 from flask import Flask,url_for,redirect
 # import config
