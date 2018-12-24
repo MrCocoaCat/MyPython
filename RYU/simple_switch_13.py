@@ -1,18 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2011 Nippon Telegraph and Telephone Corporation.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-# implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event
@@ -72,24 +59,23 @@ class SimpleSwitch13(app_manager.RyuApp):
         parser = datapath.ofproto_parser
 
         # install table-miss flow entry
-        #
         # We specify NO BUFFER to max_len of the output action due to
         # OVS bug. At this moment, if we specify a lesser number, e.g.,
         # 128, OVS will send Packet-In with invalid buffer_id and
         # truncated packet data. In that case, we cannot output packets
         # correctly.  The bug has been fixed in OVS v2.1.0.
         # 封包
-        #當封包沒有match 任何一個普通Flow Entry 時，則觸發Packet-In。
+        # 當封包沒有match 任何一個普通Flow Entry 時，則觸發Packet-In。
         match = parser.OFPMatch()
         # OFPActionOutput类是用来指定封包的类
         # 指定为OUTPUT action 类别
         # OFPP_CONTROLLER:轉送到Controller 的Packet-In 訊息
-        # OFPP_FLOOD:轉送（Flood）到所有VLAN 的物理連接埠，除了來源埠跟已閉鎖的埠
+        # OFPP_FLOOD:轉送（Flood）到所有VLAN的物理連接埠，除了來源埠跟已閉鎖的埠
 
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
                                           # 当指定OFPCML_NO_BUFFER时，将全部加入packet-in，
-                                          #不会暂存在交换机中
+                                          # 不会暂存在交换机中
         # 优先级为0
         self.add_flow(datapath, 0, match, actions)
 
@@ -107,35 +93,25 @@ class SimpleSwitch13(app_manager.RyuApp):
         datapath = msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-
         in_port = msg.match['in_port']
-
         # 获取源地址，目的地址
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocols(ethernet.ethernet)[0]
-
         if eth.ethertype == ether_types.ETH_TYPE_LLDP:
             # ignore lldp packet
             return
-
         dst = eth.dst
         src = eth.src
-
         dpid = datapath.id
         self.mac_to_port.setdefault(dpid, {})
-
         self.logger.info("packet in %s %s %s %s", dpid, src, dst, in_port)
-
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = in_port
-
         if dst in self.mac_to_port[dpid]:
             out_port = self.mac_to_port[dpid][dst]
         else:
             out_port = ofproto.OFPP_FLOOD
-
         actions = [parser.OFPActionOutput(out_port)]
-
         # install a flow to avoid packet_in next time
         if out_port != ofproto.OFPP_FLOOD:
             match = parser.OFPMatch(in_port=in_port, eth_dst=dst)
