@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-
-
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
@@ -29,16 +27,16 @@ class SimpleSwitch13(app_manager.RyuApp):
         # OFPInstructionActions:在目前的action set中寫入新的action，如果有相同的则覆盖
         # OFPInstructionMeter:指定該封包到所定義的meter table。
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                                                 actions)]
+                                             actions)]
         # APPLY_ACTIONS为立即为报文执行指令
         if buffer_id:
             # 消息类别为OFPFlowMod，instructions为指令
             mod = parser.OFPFlowMod(datapath=datapath, buffer_id=buffer_id,
-                                        priority=priority, match=match,
-                                        instructions=inst)
+                                    priority=priority, match=match,
+                                    instructions=inst)
         else:
             mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
-                                        match=match, instructions=inst)
+                                    match=match, instructions=inst)
             # 发送至switch
         datapath.send_msg(mod)
 
@@ -71,21 +69,21 @@ class SimpleSwitch13(app_manager.RyuApp):
         # 指定为OUTPUT action 类别
         # OFPP_CONTROLLER:轉送到Controller 的Packet-In 訊息
         # OFPP_FLOOD:轉送（Flood）到所有VLAN的物理連接埠，除了來源埠跟已閉鎖的埠
-
+        # 当指定OFPCML_NO_BUFFER时，将全部加入packet-in，
+        # 不会暂存在交换机中
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
-                                          # 当指定OFPCML_NO_BUFFER时，将全部加入packet-in，
-                                          # 不会暂存在交换机中
+
         # 优先级为0
         self.add_flow(datapath, 0, match, actions)
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
-        # If you hit this you might want to increase
-        # the "miss_send_length" of your switch
         # 未 match 任何一个FLOW Entry 时，触发Packet-in
         # PacketIn事件，接收位置目的的封包
         # MAIN_DISPATCHER：一般状态
+        # If you hit this you might want to increase
+        # the "miss_send_length" of your switch
         if ev.msg.msg_len < ev.msg.total_len:
             self.logger.debug("packet truncated: only %s of %s bytes",
                               ev.msg.msg_len, ev.msg.total_len)
@@ -103,16 +101,24 @@ class SimpleSwitch13(app_manager.RyuApp):
         dst = eth.dst
         src = eth.src
         dpid = datapath.id
+        # mac_to_port为类内定义的字典
+        # 查找键值，若无想对应的键值，则设置
+        # 如果字典中包含有给定键，则返回该键对应的值，否则返回为该键设置的值。
         self.mac_to_port.setdefault(dpid, {})
         self.logger.info("packet in %s %s %s %s", dpid, src, dst, in_port)
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = in_port
+
+        # 如果目的IP 在字典中，获取其值
         if dst in self.mac_to_port[dpid]:
             out_port = self.mac_to_port[dpid][dst]
         else:
+            # 否则，设为flood 发送
             out_port = ofproto.OFPP_FLOOD
+        # 指定动作
         actions = [parser.OFPActionOutput(out_port)]
         # install a flow to avoid packet_in next time
+        # 如果可以获取到out_port的值
         if out_port != ofproto.OFPP_FLOOD:
             match = parser.OFPMatch(in_port=in_port, eth_dst=dst)
             # verify if we have a valid buffer_id, if yes avoid to send both
@@ -122,10 +128,12 @@ class SimpleSwitch13(app_manager.RyuApp):
                 return
             else:
                 self.add_flow(datapath, 1, match, actions)
+        # 如果发送flood ，则不写入流表
         data = None
         if msg.buffer_id == ofproto.OFP_NO_BUFFER:
             data = msg.data
 
+        # OFPPacketOut:The controller uses this message to send a packet out throught the switch
         out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
                                   in_port=in_port, actions=actions, data=data)
         # 发送至switch

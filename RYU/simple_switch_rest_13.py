@@ -18,8 +18,8 @@ url = '/simpleswitch/mactable/{dpid}'
 
 class SimpleSwitchRest13(simple_switch_13.SimpleSwitch13):
 
-	#類別變數_CONTEXT 是用來製定Ryu 中所支援的WSGI 網頁伺服器所對應的類別。因此我們可
-	#以透過wsgi Key 來取得WSGI 網頁伺服器的實體。
+    #類別變數_CONTEXT 是用來製定Ryu 中所支援的WSGI 網頁伺服器所對應的類別。因此我們可
+    #以透過wsgi Key 來取得WSGI 網頁伺服器的實體。
     _CONTEXTS = {'wsgi': WSGIApplication}
 
     def __init__(self, *args, **kwargs):
@@ -29,7 +29,6 @@ class SimpleSwitchRest13(simple_switch_13.SimpleSwitch13):
         wsgi.register(SimpleSwitchController,
                       {simple_switch_instance_name: self})
 
-					  
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         super(SimpleSwitchRest13, self).switch_features_handler(ev)
@@ -37,7 +36,6 @@ class SimpleSwitchRest13(simple_switch_13.SimpleSwitch13):
         self.switches[datapath.id] = datapath
         self.mac_to_port.setdefault(datapath.id, {})
 
-		
     def set_mac_to_port(self, dpid, entry):
         mac_table = self.mac_to_port.setdefault(dpid, {})
         datapath = self.switches.get(dpid)
@@ -84,7 +82,6 @@ class SimpleSwitchController(ControllerBase):
         body = json.dumps(mac_table)
         return Response(content_type='application/json', body=body)
 
-		
     @route('simpleswitch', url, methods=['PUT'],
            requirements={'dpid': dpid_lib.DPID_PATTERN})
     def put_mac_table(self, req, **kwargs):
