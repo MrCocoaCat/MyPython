@@ -10,8 +10,6 @@ from ryu.lib.dpid import str_to_dpid
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.app import simple_switch_13
-
-
 class SimpleSwitchLacp13(simple_switch_13.SimpleSwitch13):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
     _CONTEXTS = {'lacplib': lacplib.LacpLib}
