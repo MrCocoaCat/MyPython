@@ -7,6 +7,7 @@ from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import ether_types
+import ryu.app.ofctl.api
 
 # 继承ryu.base.app_manager.RyuApp
 class SimpleSwitch13(app_manager.RyuApp):
@@ -20,39 +21,52 @@ class SimpleSwitch13(app_manager.RyuApp):
     def add_flow(self, datapath, priority, match, actions, buffer_id=None):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-
-        # Instruction 规定对符合match时，所进行的指令
-        # OFPInstructionGotoTable
-        # OFPInstructionWriteMetadata:寫入Metadata 以做為下一個table 所需的參考資料。
-        # OFPInstructionActions:在目前的action set中寫入新的action，如果有相同的则覆盖
-        # OFPInstructionMeter:指定該封包到所定義的meter table。
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
         # APPLY_ACTIONS为立即为报文执行指令
         if buffer_id:
             # 消息类别为OFPFlowMod，instructions为指令
-            mod = parser.OFPFlowMod(datapath=datapath, buffer_id=buffer_id,
-                                    priority=priority, match=match,
+            mod = parser.OFPFlowMod(datapath=datapath,
+                                    buffer_id=buffer_id,
+                                    priority=priority,
+                                    match=match,
                                     instructions=inst)
         else:
-            mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
-                                    match=match, instructions=inst)
-            # 发送至switch
+            mod = parser.OFPFlowMod(datapath=datapath,
+                                    priority=priority,
+                                    match=match,
+                                    instructions=inst)
+        datapath.send_msg(mod)
+
+    def del_flow(self, datapath, priority, match, actions, buffer_id=None):
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
+                                             actions)]
+        # APPLY_ACTIONS为立即为报文执行指令
+        if buffer_id:
+            # 消息类别为OFPFlowMod，instructions为指令
+            mod = parser.OFPFlowMod(datapath=datapath,
+                                    buffer_id=buffer_id,
+                                    priority=priority,
+                                    command=ofproto.OFPFC_DELETE,
+                                    match=match,
+                                    instructions=inst)
+        else:
+            mod = parser.OFPFlowMod(datapath=datapath,
+                                    priority=priority,
+                                    command=ofproto.OFPFC_DELETE,
+                                    match=match,
+                                    instructions=inst)
         datapath.send_msg(mod)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
-        # 事件管理
-        # 事件物件（Event Object ）做為參數
-        # ryu.controller.handler.set_ev_cls 最为其修飾函數
-        # ryu.controller.ofp_event.EventOFP<消息名称>
-        # ofp_event.EventOFP<SwitchFeatures>即消息类型为SwitchFeatures
-        # CONFIG_DISPATCHER状态：接收SwitchFeatures 訊息
-        # ev.mag 存储消息类别实例，ryu.ofproto.ofproto_v1_3_parser.OFPSwitchFeatures
-        # datapath 类存储讯息相关事件 ryu.controller.controller.Datapath
         datapath = ev.msg.datapath
+        print "datapath:"
         print datapath
         ofproto = datapath.ofproto
+        print "ofproto:"
         print ofproto
         parser = datapath.ofproto_parser
 
@@ -65,12 +79,6 @@ class SimpleSwitch13(app_manager.RyuApp):
         # 封包
         # 當封包沒有match 任何一個普通Flow Entry 時，則觸發Packet-In。
         match = parser.OFPMatch()
-        # OFPActionOutput类是用来指定封包的类
-        # 指定为OUTPUT action 类别
-        # OFPP_CONTROLLER:轉送到Controller 的Packet-In 訊息
-        # OFPP_FLOOD:轉送（Flood）到所有VLAN的物理連接埠，除了來源埠跟已閉鎖的埠
-        # 当指定OFPCML_NO_BUFFER时，将全部加入packet-in，
-        # 不会暂存在交换机中
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
         # 优先级为0
@@ -89,9 +97,12 @@ class SimpleSwitch13(app_manager.RyuApp):
         msg = ev.msg
         datapath = msg.datapath
         ofproto = datapath.ofproto
+        print "msg is"
         print msg
         parser = datapath.ofproto_parser
         in_port = msg.match['in_port']
+        print "in_port"
+        print in_port
         # 获取源地址，目的地址
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocols(ethernet.ethernet)[0]
