@@ -21,11 +21,6 @@ class SimpleSwitch13(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
-        # Instruction 规定对符合match时，所进行的指令
-        # OFPInstructionGotoTable
-        # OFPInstructionWriteMetadata:寫入Metadata 以做為下一個table 所需的參考資料。
-        # OFPInstructionActions:在目前的action set中寫入新的action，如果有相同的则覆盖
-        # OFPInstructionMeter:指定該封包到所定義的meter table。
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
         # APPLY_ACTIONS为立即为报文执行指令
@@ -39,8 +34,9 @@ class SimpleSwitch13(app_manager.RyuApp):
                                     match=match, instructions=inst)
             # 发送至switch
         datapath.send_msg(mod)
+        exit(0)
 
-    @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
+    @set_ev_cls(ofp_event.EventsOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
 
         datapath = ev.msg.datapath
