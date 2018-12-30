@@ -47,6 +47,3 @@ if __name__ == '__main__':
             hostip="192.168.0."+str(100+i)
             gencomm(hostip=hostip,iphead=ip)
             print "*" * 20
-
-
-			
