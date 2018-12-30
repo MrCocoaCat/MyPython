@@ -28,7 +28,5 @@ if __name__ == '__main__':
     print(duck.ranks)
     print(duck.suits)
     print(duck.__repr__)
-
     print(duck[1])
-
     print(random.choice(duck))
