@@ -19,6 +19,7 @@ class SimpleSwitch13(app_manager.RyuApp):
         self.num = 0
 
     def add_flow(self, datapath, priority, match, actions, buffer_id=None):
+        print "begin add flow "
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
@@ -34,39 +35,16 @@ class SimpleSwitch13(app_manager.RyuApp):
         else:
             mod = parser.OFPFlowMod(datapath=datapath,
                                     priority=priority,
-                                    match=match,
-                                    instructions=inst)
-        datapath.send_msg(mod)
-
-    def del_flow(self, datapath, priority, match, actions, buffer_id=None):
-        ofproto = datapath.ofproto
-        parser = datapath.ofproto_parser
-        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                                             actions)]
-        # APPLY_ACTIONS为立即为报文执行指令
-        if buffer_id:
-            # 消息类别为OFPFlowMod，instructions为指令
-            mod = parser.OFPFlowMod(datapath=datapath,
-                                    buffer_id=buffer_id,
-                                    priority=priority,
-                                    command=ofproto.OFPFC_DELETE,
-                                    match=match,
-                                    instructions=inst)
-        else:
-            mod = parser.OFPFlowMod(datapath=datapath,
-                                    priority=priority,
-                                    command=ofproto.OFPFC_DELETE,
                                     match=match,
                                     instructions=inst)
         datapath.send_msg(mod)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
-        self.num += 1
-        print "round num: %d" % self.num
+        #self.num += 1
+        #print "round num: %d" % self.num
         datapath = ev.msg.datapath
-        # print "datapath:"
-        # print datapath
+        print "datapath:%x" % datapath.id
         ofproto = datapath.ofproto
         # print "ofproto:"
         # print ofproto
@@ -88,18 +66,22 @@ class SimpleSwitch13(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         in_port = msg.match['in_port']
-        print "in_port:%d" % in_port
+       # print "in_port:%d" % in_port
         # 获取源地址，目的地址
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocols(ethernet.ethernet)[0]
-        if eth.ethertype == ether_types.ETH_TYPE_LLDP:
-            # ignore lldp packet
-            return
+        print "ethertype is %x" % eth.ethertype
+        # if eth.ethertype == ether_types.ETH_TYPE_LLDP:
+        #     print "ignor packet"
+        #     return
         dst = eth.dst
         src = eth.src
         dpid = datapath.id
         self.mac_to_port.setdefault(dpid, {})
-        self.logger.info("packet in %x src:%s dst:%s in_port:%s", dpid, src, dst, in_port)
+        self.logger.info("packet in %x src:%s dst:%s in_port:%s ", dpid, src, dst, in_port)
+        if eth.ethertype == ether_types.ETH_TYPE_LLDP:
+            print "ignore lldp packet"
+            return
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = in_port
 
@@ -121,15 +103,16 @@ class SimpleSwitch13(app_manager.RyuApp):
                 return
             else:
                 self.add_flow(datapath, 1, match, actions)
-        # 如果发送flood ，则不写入流表
-        data = None
-        if msg.buffer_id == ofproto.OFP_NO_BUFFER:
-            data = msg.data
+        else:
+            # 如果发送flood ，则不写入流表
+            data = None
+            if msg.buffer_id == ofproto.OFP_NO_BUFFER:
+                data = msg.data
 
-        # OFPPacketOut:The controller uses this message to send a packet out throught the switch
-        out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
-                                  in_port=in_port, actions=actions, data=data)
-        # 发送至switch
-        datapath.send_msg(out)
+            # OFPPacketOut:The controller uses this message to send a packet out throught the switch
+            out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
+                                      in_port=in_port, actions=actions, data=data)
+            # 发送至switch
+            datapath.send_msg(out)
 
 

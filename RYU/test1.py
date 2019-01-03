@@ -10,6 +10,11 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import ether_types
 
 # 继承ryu.base.app_manager.RyuApp
+
+a = {9: "0025-9095-dcfb",
+     11: "0025-9095-dcfb",
+     12: "0025-9095-dcff"
+     }
 class SimpleSwitch13(app_manager.RyuApp):
     # 指定openflow版本
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -27,8 +32,8 @@ class SimpleSwitch13(app_manager.RyuApp):
         print ofproto
         parser = datapath.ofproto_parser
 
-        match1 = parser.OFPMatch(in_port=12, eth_dst='0025-9095-dcff')
-        actions1 = [parser.OFPActionOutput(11)]
+        match1 = parser.OFPMatch(in_port=9, eth_dst='0025-9095-dcfb')
+        actions1 = [parser.OFPActionOutput(12)]
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions1)]
 
         mod1 = parser.OFPFlowMod(datapath,
@@ -49,8 +54,8 @@ class SimpleSwitch13(app_manager.RyuApp):
         req = datapath.send_msg(mod1)
         print req
 
-        match2 = parser.OFPMatch(in_port=11, eth_dst='0025-9095-dcfb')
-        actions2 = [parser.OFPActionOutput(12)]
+        match2 = parser.OFPMatch(in_port=12, eth_dst='0025-9095-dcff')
+        actions2 = [parser.OFPActionOutput(11)]
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions2)]
 
         mod2 = parser.OFPFlowMod(datapath,
