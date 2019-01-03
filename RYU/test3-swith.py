@@ -91,10 +91,7 @@ class SimpleSwitch13(app_manager.RyuApp):
             #self.list_add_flow(flow_list)
             self.list_del_flow(flow_list)
 
-
-
-
-
+    # pack-in
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
         if ev.msg.msg_len < ev.msg.total_len:
