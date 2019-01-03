@@ -56,8 +56,7 @@ class SimpleSwitch13(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
-        self.num += 1
-        print "round num: %d" % self.num
+
         if ev.msg.msg_len < ev.msg.total_len:
             self.logger.debug("packet truncated: only %s of %s bytes",
                               ev.msg.msg_len, ev.msg.total_len)
@@ -66,22 +65,21 @@ class SimpleSwitch13(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         in_port = msg.match['in_port']
-       # print "in_port:%d" % in_port
+        # print "in_port:%d" % in_port
         # 获取源地址，目的地址
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocols(ethernet.ethernet)[0]
-        print "ethertype is %x" % eth.ethertype
-        # if eth.ethertype == ether_types.ETH_TYPE_LLDP:
-        #     print "ignor packet"
-        #     return
+        #print "ethertype is %d" % eth.ethertype
+        if eth.ethertype == ether_types.ETH_TYPE_LLDP:
+           # print "ignor packet"
+            return
+        if eth.ethertype == 105:
+            return
         dst = eth.dst
         src = eth.src
         dpid = datapath.id
         self.mac_to_port.setdefault(dpid, {})
         self.logger.info("packet in %x src:%s dst:%s in_port:%s ", dpid, src, dst, in_port)
-        if eth.ethertype == ether_types.ETH_TYPE_LLDP:
-            print "ignore lldp packet"
-            return
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = in_port
 
@@ -114,5 +112,7 @@ class SimpleSwitch13(app_manager.RyuApp):
                                       in_port=in_port, actions=actions, data=data)
             # 发送至switch
             datapath.send_msg(out)
+        self.num += 1
+        print "round num: %d" % self.num
 
 
