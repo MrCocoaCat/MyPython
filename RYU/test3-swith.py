@@ -18,7 +18,8 @@ class SimpleSwitch13(app_manager.RyuApp):
         self.mac_to_port = {}
         self.num = 0
         self.switchDic = {"0x1741f4aa82eef": "192.168.125.47",
-                          "0x148bd3d3ad316": "192.168.125.43"}
+                          "0x148bd3d3ad316": "192.168.125.43",
+                          "0x148bd3d3abf96": "192.168.125.45"}
 
     def list_add_flow(self, add_list):
         for i in add_list:
@@ -74,22 +75,27 @@ class SimpleSwitch13(app_manager.RyuApp):
                                           ofproto.OFPCML_NO_BUFFER)]
         self.add_flow(datapath, 0, match, actions)
         if datapath_id == "0x1741f4aa82eef":
-            match1 = parser.OFPMatch(in_port=9)
-            actions1 = [parser.OFPActionOutput(11)]
-            match2 = parser.OFPMatch(in_port=11)
-            actions2 = [parser.OFPActionOutput(9)]
-            match3 = parser.OFPMatch(in_port=10)
-            actions3 = [parser.OFPActionOutput(12)]
-            match4 = parser.OFPMatch(in_port=12)
-            actions4 = [parser.OFPActionOutput(10)]
-
-            flow_list = []
-            flow_list.append((datapath, 1, match1, actions1))
-            flow_list.append((datapath, 1, match2, actions2))
-            flow_list.append((datapath, 1, match3, actions3))
-            flow_list.append((datapath, 1, match4, actions4))
-            #self.list_add_flow(flow_list)
-            self.list_del_flow(flow_list)
+            #47
+            match1 = parser.OFPMatch(in_port=8)
+            actions1 = [parser.OFPActionOutput(9)]
+            match2 = parser.OFPMatch(in_port=9)
+            actions2 = [parser.OFPActionOutput(8)]
+            flow_list1 = []
+            flow_list1.append((datapath, 5, match1, actions1))
+            flow_list1.append((datapath, 5, match2, actions2))
+            self.list_add_flow(flow_list1)
+            #self.list_del_flow(flow_list1)
+        elif datapath_id == "0x148bd3d3ad316":
+            # 43
+            match1 = parser.OFPMatch(in_port=29)
+            actions1 = [parser.OFPActionOutput(36)]
+            match2 = parser.OFPMatch(in_port=36)
+            actions2 = [parser.OFPActionOutput(29)]
+            flow_list1 = []
+            flow_list1.append((datapath, 5, match1, actions1))
+            flow_list1.append((datapath, 5, match2, actions2))
+            self.list_add_flow(flow_list1)
+           # self.list_del_flow(flow_list1)
 
     # pack-in
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)

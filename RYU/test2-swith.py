@@ -52,11 +52,11 @@ class SimpleSwitch13(app_manager.RyuApp):
         match = parser.OFPMatch()
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
-        self.add_flow(datapath, 0, match, actions)
+        self.add_flow(datapath, 1, match, actions)
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
-
+        print "EventOFPPacketIn"
         if ev.msg.msg_len < ev.msg.total_len:
             self.logger.debug("packet truncated: only %s of %s bytes",
                               ev.msg.msg_len, ev.msg.total_len)
@@ -69,12 +69,13 @@ class SimpleSwitch13(app_manager.RyuApp):
         # 获取源地址，目的地址
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocols(ethernet.ethernet)[0]
-        #print "ethertype is %d" % eth.ethertype
-        if eth.ethertype == ether_types.ETH_TYPE_LLDP:
-           # print "ignor packet"
-            return
+
+        #if eth.ethertype == ether_types.ETH_TYPE_LLDP:
+        #   print "ignor packet"
+           #return
         if eth.ethertype == 105:
             return
+        print "ethertype is %x" % eth.ethertype
         dst = eth.dst
         src = eth.src
         dpid = datapath.id
