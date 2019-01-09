@@ -15,7 +15,10 @@ class SimpleSwitch13(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(SimpleSwitch13, self).__init__(*args, **kwargs)
-        self.mac_to_port = {}
+        self.mac_to_port = {"0x1741f4aa82eef": {" 741f-4aa8-2f1f": 8,
+                                                "741f-4aa8-2f20": 9},
+                            "0x148bd3d3ad316": {}
+                            }
         self.num = 0
         self.switchDic = {"0x1741f4aa82eef": "192.168.125.47",
                           "0x148bd3d3ad316": "192.168.125.43",
@@ -74,28 +77,59 @@ class SimpleSwitch13(app_manager.RyuApp):
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
         self.add_flow(datapath, 0, match, actions)
-        if datapath_id == "0x1741f4aa82eef":
-            #47
+
+        if "192.168.125.47" == self.switchDic[datapath_id]:
+            print "192.168.125.47"
+
+            # 8 级联 ，13 为大交换机端口
             match1 = parser.OFPMatch(in_port=8)
-            actions1 = [parser.OFPActionOutput(9)]
-            match2 = parser.OFPMatch(in_port=9)
+            actions1 = [parser.OFPActionOutput(13)]
+            match2 = parser.OFPMatch(in_port=13)
             actions2 = [parser.OFPActionOutput(8)]
+
+            # 9为服务器，14为大交换机端口
+            match3 = parser.OFPMatch(in_port=14)
+            actions3 = [parser.OFPActionOutput(9)]
+            match4 = parser.OFPMatch(in_port=9)
+            actions4 = [parser.OFPActionOutput(14)]
+
+            # 11为192.168.125.123的 enp4s0f1网卡为监听服务器
+            # 12为大交换机的镜像端口
+            match5 = parser.OFPMatch(in_port=11)
+            actions5 = [parser.OFPActionOutput(12)]
+            match6 = parser.OFPMatch(in_port=12)
+            actions6 = [parser.OFPActionOutput(11)]
+
             flow_list1 = []
             flow_list1.append((datapath, 5, match1, actions1))
             flow_list1.append((datapath, 5, match2, actions2))
+            flow_list1.append((datapath, 5, match3, actions3))
+            flow_list1.append((datapath, 5, match4, actions4))
+            flow_list1.append((datapath, 5, match5, actions5))
+            flow_list1.append((datapath, 5, match6, actions6))
             self.list_add_flow(flow_list1)
             #self.list_del_flow(flow_list1)
-        elif datapath_id == "0x148bd3d3ad316":
-            # 43
+        elif "192.168.125.43" == self.switchDic[datapath_id]:
+            # 29 为服务器，33为小交换机
+            print "192.168.125.43"
             match1 = parser.OFPMatch(in_port=29)
-            actions1 = [parser.OFPActionOutput(36)]
-            match2 = parser.OFPMatch(in_port=36)
+            actions1 = [parser.OFPActionOutput(33)]
+            match2 = parser.OFPMatch(in_port=33)
             actions2 = [parser.OFPActionOutput(29)]
+
+            # 34为小交换机，34 为与openflow-47级联接口
+            match3 = parser.OFPMatch(in_port=34)
+            actions3 = [parser.OFPActionOutput(36)]
+            match4 = parser.OFPMatch(in_port=36)
+            actions4 = [parser.OFPActionOutput(34)]
+
             flow_list1 = []
             flow_list1.append((datapath, 5, match1, actions1))
             flow_list1.append((datapath, 5, match2, actions2))
+            flow_list1.append((datapath, 5, match3, actions3))
+            flow_list1.append((datapath, 5, match4, actions4))
             self.list_add_flow(flow_list1)
-           # self.list_del_flow(flow_list1)
+            #self.list_del_flow(flow_list1)
 
     # pack-in
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
