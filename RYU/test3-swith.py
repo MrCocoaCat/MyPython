@@ -100,6 +100,8 @@ class SimpleSwitch13(app_manager.RyuApp):
             match6 = parser.OFPMatch(in_port=12)
             actions6 = [parser.OFPActionOutput(11)]
 
+
+
             flow_list1 = []
             flow_list1.append((datapath, 5, match1, actions1))
             flow_list1.append((datapath, 5, match2, actions2))
@@ -111,23 +113,32 @@ class SimpleSwitch13(app_manager.RyuApp):
             #self.list_del_flow(flow_list1)
         elif "192.168.125.43" == self.switchDic[datapath_id]:
             # 29 为服务器，33为小交换机
+            # 25 26 为iptable口，192.168.125.161 实现iptable
             print "192.168.125.43"
             match1 = parser.OFPMatch(in_port=29)
             actions1 = [parser.OFPActionOutput(33)]
             match2 = parser.OFPMatch(in_port=33)
             actions2 = [parser.OFPActionOutput(29)]
 
-            # 34为小交换机，34 为与openflow-47级联接口
+            # 34为小交换机，25为iptable
             match3 = parser.OFPMatch(in_port=34)
-            actions3 = [parser.OFPActionOutput(36)]
-            match4 = parser.OFPMatch(in_port=36)
+            actions3 = [parser.OFPActionOutput(25)]
+            match4 = parser.OFPMatch(in_port=25)
             actions4 = [parser.OFPActionOutput(34)]
+
+            # 26 为iptable ，36 为与openflow-47级联接口
+            match5 = parser.OFPMatch(in_port=26)
+            actions5 = [parser.OFPActionOutput(36)]
+            match6 = parser.OFPMatch(in_port=36)
+            actions6 = [parser.OFPActionOutput(26)]
 
             flow_list1 = []
             flow_list1.append((datapath, 5, match1, actions1))
             flow_list1.append((datapath, 5, match2, actions2))
             flow_list1.append((datapath, 5, match3, actions3))
             flow_list1.append((datapath, 5, match4, actions4))
+            flow_list1.append((datapath, 5, match5, actions5))
+            flow_list1.append((datapath, 5, match6, actions6))
             self.list_add_flow(flow_list1)
             #self.list_del_flow(flow_list1)
 
