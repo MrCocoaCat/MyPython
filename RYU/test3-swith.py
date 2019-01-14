@@ -34,14 +34,17 @@ class SimpleSwitch13(app_manager.RyuApp):
 
     def add_flow(self, datapath, priority, match, actions):
         print "begin add flow ..."
+        print match
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
+
         mod = parser.OFPFlowMod(datapath=datapath,
                                 priority=priority,
                                 match=match,
                                 instructions=inst)
+        #print mod
         datapath.send_msg(mod)
 
     def del_flow(self, datapath, priority, match, actions):
@@ -81,26 +84,24 @@ class SimpleSwitch13(app_manager.RyuApp):
         if "192.168.125.47" == self.switchDic[datapath_id]:
             print "192.168.125.47"
 
-            # 8 级联 ，13 为大交换机端口
+            # 8 级联 ，13 为镜像交换机端口
             match1 = parser.OFPMatch(in_port=8)
             actions1 = [parser.OFPActionOutput(13)]
             match2 = parser.OFPMatch(in_port=13)
             actions2 = [parser.OFPActionOutput(8)]
 
-            # 9为服务器，14为大交换机端口
+            # 9为125服务器，14为大交换机端口
             match3 = parser.OFPMatch(in_port=14)
             actions3 = [parser.OFPActionOutput(9)]
             match4 = parser.OFPMatch(in_port=9)
             actions4 = [parser.OFPActionOutput(14)]
 
-            # 11为192.168.125.123的 enp4s0f1网卡为监听服务器
-            # 12为大交换机的镜像端口
+            # 11监听服务器，192.168.125.123的enp4s0f1网卡
+            # 12为镜像交换机的镜像端口
             match5 = parser.OFPMatch(in_port=11)
             actions5 = [parser.OFPActionOutput(12)]
             match6 = parser.OFPMatch(in_port=12)
             actions6 = [parser.OFPActionOutput(11)]
-
-
 
             flow_list1 = []
             flow_list1.append((datapath, 5, match1, actions1))
@@ -112,7 +113,7 @@ class SimpleSwitch13(app_manager.RyuApp):
             self.list_add_flow(flow_list1)
             #self.list_del_flow(flow_list1)
         elif "192.168.125.43" == self.switchDic[datapath_id]:
-            # 29 为服务器，33为小交换机
+            # 29 为119服务器，33为小交换机
             # 25 26 为iptable口，192.168.125.161 实现iptable
             print "192.168.125.43"
             match1 = parser.OFPMatch(in_port=29)
@@ -120,27 +121,36 @@ class SimpleSwitch13(app_manager.RyuApp):
             match2 = parser.OFPMatch(in_port=33)
             actions2 = [parser.OFPActionOutput(29)]
 
-            # 34为小交换机，25为iptable
+            # 34为小交换机，27 为路由器
             match3 = parser.OFPMatch(in_port=34)
-            actions3 = [parser.OFPActionOutput(25)]
-            match4 = parser.OFPMatch(in_port=25)
+            actions3 = [parser.OFPActionOutput(27)]
+            match4 = parser.OFPMatch(in_port=27)
             actions4 = [parser.OFPActionOutput(34)]
+
+            # 在iptable 之间加入路由器
+            # 28 为路由 25为iptable
+            match7 = parser.OFPMatch(in_port=28)
+            actions7 = [parser.OFPActionOutput(25)]
+            match8 = parser.OFPMatch(in_port=25)
+            actions8 = [parser.OFPActionOutput(28)]
 
             # 26 为iptable ，36 为与openflow-47级联接口
             match5 = parser.OFPMatch(in_port=26)
             actions5 = [parser.OFPActionOutput(36)]
+            self.add_flow(datapath, 5, match5, actions5)
             match6 = parser.OFPMatch(in_port=36)
             actions6 = [parser.OFPActionOutput(26)]
+            self.add_flow(datapath, 5, match6, actions6)
 
             flow_list1 = []
             flow_list1.append((datapath, 5, match1, actions1))
             flow_list1.append((datapath, 5, match2, actions2))
             flow_list1.append((datapath, 5, match3, actions3))
             flow_list1.append((datapath, 5, match4, actions4))
-            flow_list1.append((datapath, 5, match5, actions5))
-            flow_list1.append((datapath, 5, match6, actions6))
+            flow_list1.append((datapath, 5, match7, actions7))
+            flow_list1.append((datapath, 5, match8, actions8))
             self.list_add_flow(flow_list1)
-            #self.list_del_flow(flow_list1)
+            # self.list_del_flow(flow_list1)
 
     # pack-in
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
