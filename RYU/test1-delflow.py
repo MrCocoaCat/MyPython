@@ -25,6 +25,7 @@ class SimpleSwitch13(app_manager.RyuApp):
         parser = datapath.ofproto_parser
         match = parser.OFPMatch(in_port=inport)
         actions = [parser.OFPActionOutput(outport)]
+
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
         mod = parser.OFPFlowMod(datapath,
                                  cookie=0,
@@ -45,18 +46,7 @@ class SimpleSwitch13(app_manager.RyuApp):
         print req
         pass
 
-    @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
-    def switch_features_handler(self, ev):
-        datapath = ev.msg.datapath
-        datapath_id = hex(datapath.id)
-        print datapath_id
-        if "192.168.125.47" == self.switchDic[datapath_id]:
-            self.del_port(datapath, inport=11, outport=8)
-            self.del_port(datapath, inport=8, outport=11)
 
-        elif "192.168.125.43" == self.switchDic[datapath_id]:
-            self.del_port(datapath, inport=36, outport=27)
-            self.del_port(datapath, inport=27, outport=38)
 
 
 

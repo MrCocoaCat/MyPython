@@ -83,12 +83,7 @@ class SimpleSwitch13(app_manager.RyuApp):
 
         if "192.168.125.47" == self.switchDic[datapath_id]:
             print "192.168.125.47"
-
-            # 8 级联 ，13 为镜像交换机端口
-            match1 = parser.OFPMatch(in_port=8)
-            actions1 = [parser.OFPActionOutput(13)]
-            match2 = parser.OFPMatch(in_port=13)
-            actions2 = [parser.OFPActionOutput(8)]
+            flow_list2 = []
 
             # 9为125服务器，14为大交换机端口
             match3 = parser.OFPMatch(in_port=14)
@@ -103,19 +98,27 @@ class SimpleSwitch13(app_manager.RyuApp):
             match6 = parser.OFPMatch(in_port=12)
             actions6 = [parser.OFPActionOutput(11)]
 
-            flow_list1 = []
-            flow_list1.append((datapath, 5, match1, actions1))
-            flow_list1.append((datapath, 5, match2, actions2))
-            flow_list1.append((datapath, 5, match3, actions3))
-            flow_list1.append((datapath, 5, match4, actions4))
-            flow_list1.append((datapath, 5, match5, actions5))
-            flow_list1.append((datapath, 5, match6, actions6))
-            self.list_add_flow(flow_list1)
-            #self.list_del_flow(flow_list1)
+            flow_list2.append((datapath, 5, match3, actions3))
+            flow_list2.append((datapath, 5, match4, actions4))
+            flow_list2.append((datapath, 5, match5, actions5))
+            flow_list2.append((datapath, 5, match6, actions6))
+            #self.list_add_flow(flow_list2)
+            self.list_del_flow(flow_list2)
+
+            # 8 级联 ，13 为镜像交换机端口
+            match10 = parser.OFPMatch(in_port=13)
+            actions10 = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+                                                ofproto.OFPCML_NO_BUFFER)]
+
+            #self.add_flow(datapath, 10, match10, actions10)
+            self.del_flow(datapath, 10, match10, actions10)
+
         elif "192.168.125.43" == self.switchDic[datapath_id]:
             # 29 为119服务器，33为小交换机
             # 25 26 为iptable口，192.168.125.161 实现iptable
             print "192.168.125.43"
+            flow_list1 = []
+
             match1 = parser.OFPMatch(in_port=29)
             actions1 = [parser.OFPActionOutput(33)]
             match2 = parser.OFPMatch(in_port=33)
@@ -134,15 +137,6 @@ class SimpleSwitch13(app_manager.RyuApp):
             match8 = parser.OFPMatch(in_port=25)
             actions8 = [parser.OFPActionOutput(28)]
 
-            # 26 为iptable ，36 为与openflow-47级联接口
-            match5 = parser.OFPMatch(in_port=26)
-            actions5 = [parser.OFPActionOutput(36)]
-            match6 = parser.OFPMatch(in_port=36)
-            actions6 = [parser.OFPActionOutput(26)]
-            self.add_flow(datapath, 5, match5, actions5)
-            self.add_flow(datapath, 5, match6, actions6)
-
-            flow_list1 = []
             flow_list1.append((datapath, 5, match1, actions1))
             flow_list1.append((datapath, 5, match2, actions2))
             flow_list1.append((datapath, 5, match3, actions3))
@@ -151,6 +145,13 @@ class SimpleSwitch13(app_manager.RyuApp):
             flow_list1.append((datapath, 5, match8, actions8))
             #self.list_add_flow(flow_list1)
             self.list_del_flow(flow_list1)
+
+            # 26 为iptable ，上发至控制器
+            match10 = parser.OFPMatch(in_port=26)
+            actions10 = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+                                              ofproto.OFPCML_NO_BUFFER)]
+            #self.add_flow(datapath, 10, match10, actions10)
+            self.del_flow(datapath, 10, match10, actions10)
 
     # pack-in
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
@@ -163,17 +164,15 @@ class SimpleSwitch13(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         in_port = msg.match['in_port']
-        pkt = packet.Packet(msg.data)
-        eth = pkt.get_protocols(ethernet.ethernet)[0]
-        #print "ethertype is %x" % eth.ethertype
-        if eth.ethertype == ether_types.ETH_TYPE_LLDP:
-            #print "ignore lldp packet"
-            return
-        dst = eth.dst
-        src = eth.src
-        dpid = datapath.id
-        self.mac_to_port.setdefault(dpid, {})
-        self.logger.info("packet in %x src:%s dst:%s in_port:%s ", dpid, src, dst, in_port)
-        self.num += 1
-        print "round num: %d" % self.num
+        datapath_id = hex(datapath.id)
+        if "192.168.125.47" == self.switchDic[datapath_id]:
+            if in_port == "13":
+                pass
+
+        elif "192.168.125.43" == self.switchDic[datapath_id]:
+            if in_port == "26":
+                pass
+
+        else:
+            print in_port
 

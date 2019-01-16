@@ -15,9 +15,12 @@ def test(s):
     print(s + " end")
 
 
-pool = eventlet.GreenPool(5)
-a = time.time()
-for i in range(5):
-    pool.spawn(test(str(i)))
-b = time.time()
-print b - a
+# pool = eventlet.GreenPool(5)
+# a = time.time()
+# for i in range(5):
+#     pool.spawn(test(str(i)))
+# b = time.time()
+# print b - a
+pid = eventlet.spawn(test, 1)
+print pid
+pid.wait()
