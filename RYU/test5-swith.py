@@ -15,33 +15,24 @@ class SimpleSwitch13(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(SimpleSwitch13, self).__init__(*args, **kwargs)
-        self.port_to_mac = {"0x1741f4aa82eef": {8: "741f-4aa8-2f1f",
-                                                9: "741f-4aa8-2f20",
-                                                10: "741f-4aa8-2f21",
-                                                11: "741f-4aa8-2f22",
-                                                12: "741f-4aa8-2f23",
-                                                13: "741f-4aa8-2f24",
-                                                14: "741f-4aa8-2f25"
-                                                },
-                            "0x148bd3d3ad316": {25: "48bd-3d3a-d358",
-                                                26: "48bd-3d3a-d359",
-                                                27: "48bd-3d3a-d35a",
-                                                28: "48bd-3d3a-d35b",
-                                                29: "48bd-3d3a-d35c",
-                                                30: "48bd-3d3a-d35d",
-                                                31: "48bd-3d3a-d35e",
-                                                32: "48bd-3d3a-d35f",
-                                                33: "48bd-3d3a-d360",
-                                                34: "48bd-3d3a-d361",
-                                                35: "48bd-3d3a-d362",
-                                                36: "48bd-3d3a-d363"
-                                                }
-                            }
-        self.num = 0
+
         self.switchDic = {"0x1741f4aa82eef": "192.168.125.47",
                           "0x148bd3d3ad316": "192.168.125.43",
                           }
 
+        self.ETH_TYPE_DIC = {0x0800: "TH_TYPE_IP",
+                             0x0806: "ETH_TYPE_ARP",
+                             0x6558: "ETH_TYPE_TEB",
+                             0x8100: "ETH_TYPE_8021Q",
+                             0x86dd: "ETH_TYPE_IPV6",
+                             0x8809: "ETH_TYPE_SLOW",
+                             0x8847: "ETH_TYPE_MPLS",
+                             0x88a8: "ETH_TYPE_8021AD",
+                             0x88cc: "ETH_TYPE_LLDP",
+                             0x88e7: "ETH_TYPE_8021AH",
+                             0x05dc: "ETH_TYPE_IEEE802_3",
+                             0x8902: "ETH_TYPE_CFM",
+                           }
 
     def list_add_flow(self, add_list):
         for i in add_list:
@@ -52,8 +43,8 @@ class SimpleSwitch13(app_manager.RyuApp):
             self.del_flow(i[0], i[1], i[2], i[3])
 
     def add_flow(self, datapath, priority, match, actions):
-        print "begin add flow ..."
-        print match
+
+        print "begin add flow :", match
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
@@ -92,7 +83,6 @@ class SimpleSwitch13(app_manager.RyuApp):
     def switch_features_handler(self, ev):
         datapath = ev.msg.datapath
         datapath_id = hex(datapath.id)
-        port_mac= self.port_to_mac[datapath_id]
         print "datapath id :%x switch IP:%s" % (datapath.id, self.switchDic[datapath_id])
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -135,9 +125,7 @@ class SimpleSwitch13(app_manager.RyuApp):
         elif "192.168.125.43" == self.switchDic[datapath_id]:
             # 29 为119服务器，33为小交换机
             # 25 26 为iptable口，192.168.125.161 实现iptable
-            port_mac = self.port_to_mac[datapath_id]
             print "192.168.125.43"
-
 
             # 26 为iptable ，36 为与openflow-47级联接口
             match5 = parser.OFPMatch(in_port=26)
@@ -161,8 +149,8 @@ class SimpleSwitch13(app_manager.RyuApp):
             actions1 = [parser.OFPActionOutput(33)]
             match2 = parser.OFPMatch(in_port=33)
             actions2 = [parser.OFPActionOutput(29)]
-            flow_list3.append((datapath, 5, match1, actions1))
-            flow_list3.append((datapath, 5, match2, actions2))
+            #flow_list3.append((datapath, 5, match1, actions1))
+            #flow_list3.append((datapath, 5, match2, actions2))
 
             # 34为小交换机，27 为路由器
             match3 = parser.OFPMatch(in_port=34)
@@ -178,25 +166,45 @@ class SimpleSwitch13(app_manager.RyuApp):
     # pack-in
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
+        print "_packet_in"
         if ev.msg.msg_len < ev.msg.total_len:
             self.logger.debug("packet truncated: only %s of %s bytes",
                               ev.msg.msg_len, ev.msg.total_len)
+        #print ev.__dict__
         msg = ev.msg
+        #print msg.__dict__
+
         datapath = msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
+        data = msg.data
+
         in_port = msg.match['in_port']
-        pkt = packet.Packet(msg.data)
+
+        # msg.data 表示 Ethernet frame
+        pkt = packet.Packet(data)
+        #print pkt.get_protocols(ethernet.ethernet)
         eth = pkt.get_protocols(ethernet.ethernet)[0]
-        #print "ethertype is %x" % eth.ethertype
-        if eth.ethertype == ether_types.ETH_TYPE_LLDP:
-            #print "ignore lldp packet"
-            return
+        # eth 为class ethernet 对象
         dst = eth.dst
         src = eth.src
+        ethertype = self.ETH_TYPE_DIC.get(eth.ethertype, "Unknow")
+
         dpid = datapath.id
         #self.mac_to_port.setdefault(dpid, {})
-        self.logger.info("packet in %x src:%s dst:%s in_port:%s ", dpid, src, dst, in_port)
-        self.num += 1
-        print "round num: %d" % self.num
+        self.logger.info("packet in %x -- ethertype:%s src:%s dst:%s in_port:%s ",
+                         dpid, ethertype, src, dst, in_port)
+
+        if in_port == 9:
+            actions = [parser.OFPActionOutput(14)]
+            out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
+                                      in_port=in_port, actions=actions, data=data)
+            datapath.send_msg(out)
+
+        elif in_port == 14:
+            actions = [parser.OFPActionOutput(9)]
+            out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
+                                      in_port=in_port, actions=actions, data=data)
+            datapath.send_msg(out)
+
 

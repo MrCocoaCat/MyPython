@@ -15,9 +15,27 @@ class SimpleSwitch13(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(SimpleSwitch13, self).__init__(*args, **kwargs)
-        self.mac_to_port = {"0x1741f4aa82eef": {" 741f-4aa8-2f1f": 8,
-                                                "741f-4aa8-2f20": 9},
-                            "0x148bd3d3ad316": {}
+        self.port_to_mac = {"0x1741f4aa82eef": {8: "741f-4aa8-2f1f",
+                                                9: "741f-4aa8-2f20",
+                                                10: "741f-4aa8-2f21",
+                                                11: "741f-4aa8-2f22",
+                                                12: "741f-4aa8-2f23",
+                                                13: "741f-4aa8-2f24",
+                                                14: "741f-4aa8-2f25"
+                                                },
+                            "0x148bd3d3ad316": {25: "48bd-3d3a-d358",
+                                                26: "48bd-3d3a-d359",
+                                                27: "48bd-3d3a-d35a",
+                                                28: "48bd-3d3a-d35b",
+                                                29: "48bd-3d3a-d35c",
+                                                30: "48bd-3d3a-d35d",
+                                                31: "48bd-3d3a-d35e",
+                                                32: "48bd-3d3a-d35f",
+                                                33: "48bd-3d3a-d360",
+                                                34: "48bd-3d3a-d361",
+                                                35: "48bd-3d3a-d362",
+                                                36: "48bd-3d3a-d363"
+                                                }
                             }
         self.num = 0
         self.switchDic = {"0x1741f4aa82eef": "192.168.125.47",
