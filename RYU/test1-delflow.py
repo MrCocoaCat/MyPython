@@ -24,8 +24,8 @@ class SimpleSwitch13(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         match = parser.OFPMatch(in_port=inport)
-        actions = [parser.OFPActionOutput(outport)]
 
+        actions = []
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
         mod = parser.OFPFlowMod(datapath,
                                  cookie=0,
