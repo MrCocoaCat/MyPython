@@ -7,6 +7,7 @@
 import argparse
 import socket
 
+
 def recvall(sock, length):
     data = b''
     while len(data) < length:
@@ -17,6 +18,7 @@ def recvall(sock, length):
                            % (length, len(data)))
         data += more
     return data
+
 
 def server(interface, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -35,6 +37,7 @@ def server(interface, port):
         sc.sendall(b'Farewell, client')
         sc.close()
         print('  Reply sent, socket closed')
+
 
 def client(host, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

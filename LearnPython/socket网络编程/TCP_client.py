@@ -16,5 +16,6 @@ def tcp_client():
     print(rst)
     sock.close()
 
+
 if __name__ == '__main__':
     tcp_client()
