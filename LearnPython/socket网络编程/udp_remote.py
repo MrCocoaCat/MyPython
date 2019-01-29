@@ -9,6 +9,7 @@ import argparse, random, socket, sys
 
 MAX_BYTES = 65535
 
+
 def server(interface, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((interface, port))
@@ -22,6 +23,7 @@ def server(interface, port):
         print('The client at {} says {!r}'.format(address, text))
         message = 'Your data was {} bytes long'.format(len(data))
         sock.sendto(message.encode('ascii'), address)
+
 
 def client(hostname, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -46,6 +48,7 @@ def client(hostname, port):
             break   # we are done, and can stop looping
 
     print('The server says {!r}'.format(data.decode('ascii')))
+
 
 if __name__ == '__main__':
     choices = {'client': client, 'server': server}
