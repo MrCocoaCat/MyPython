@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import socket
 
 def clientFunc():
@@ -10,7 +11,9 @@ def clientFunc():
     text = data.decode()
     print("recive` from server ",text)
 
+
 if __name__ == '__main__':
     clientFunc()
+
 
 
