@@ -14,12 +14,13 @@ MAX_BYTES = 65535
 def server(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(('127.0.0.1', port))
+    # sock.getsockname() 获取socket的二元组
     print('Listening at {}'.format(sock.getsockname()))
     while True:
         data, address = sock.recvfrom(MAX_BYTES)
         # 解码
         text = data.decode('ascii')
-        print('The client at {} says {!r}'.format(address, text))
+        print('recive from {} : {}'.format(address, text))
         text = 'Your data was {} bytes long'.format(len(data))
         # 编码
         data = text.encode('ascii')
@@ -37,7 +38,7 @@ def client(port):
     data, address = sock.recvfrom(MAX_BYTES)  # Danger! See Chapter 2
     # 解码
     text = data.decode('ascii')
-    print ('The server {} replied :{!r}'.format(address, text))
+    print ('The server {} replied :{}'.format(address, text))
 
 
 if __name__ == '__main__':
