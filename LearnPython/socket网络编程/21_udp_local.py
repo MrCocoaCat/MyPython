@@ -38,7 +38,7 @@ def client(port):
     data, address = sock.recvfrom(MAX_BYTES)  # Danger! See Chapter 2
     # 解码
     text = data.decode('ascii')
-    print ('The server {} replied :{}'.format(address, text))
+    print('The server {} replied :{}'.format(address, text))
 
 
 if __name__ == '__main__':

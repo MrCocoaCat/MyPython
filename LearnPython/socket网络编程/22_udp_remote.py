@@ -9,7 +9,7 @@ import argparse, random, socket, sys
 
 MAX_BYTES = 65535
 
-
+# 模拟网络丢包
 def server(interface, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((interface, port))
@@ -24,7 +24,7 @@ def server(interface, port):
         message = 'Your data was {} bytes long'.format(len(data))
         sock.sendto(message.encode('ascii'), address)
 
-
+# 增加重传机制
 def client(hostname, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.connect((hostname, port))
