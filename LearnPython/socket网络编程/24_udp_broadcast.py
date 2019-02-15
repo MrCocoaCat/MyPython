@@ -2,7 +2,7 @@
 # @Time    : 2019/2/15 10:37
 # @Author  : MrCocoaCat
 # @Email   : MrCocoaCat@aliyun.com
-# @File    : 24_broadcast.py
+# @File    : 24_udp_broadcast.py
 
 import argparse, socket
 

@@ -17,8 +17,9 @@ class IN:
 
 def send_big_datagram(host, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # 设置套接字选项
+    # 设置套接字选项，关闭分组操作
     sock.setsockopt(socket.IPPROTO_IP, IN.IP_MTU_DISCOVER, IN.IP_PMTUDISC_DO)
+    # 只是进行端口配置
     sock.connect((host, port))
     try:
         sock.send(b'#' * 999999)
