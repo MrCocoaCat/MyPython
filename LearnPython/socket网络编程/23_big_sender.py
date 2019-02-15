@@ -2,7 +2,7 @@
 # @Time    : 2019/1/29 16:11
 # @Author  : MrCocoaCat
 # @Email   : MrCocoaCat@aliyun.com
-# @File    : big_sender.py
+# @File    : 23_big_sender.py
 
 
 import argparse, socket, sys
@@ -17,12 +17,14 @@ class IN:
 
 def send_big_datagram(host, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # 设置套接字选项
     sock.setsockopt(socket.IPPROTO_IP, IN.IP_MTU_DISCOVER, IN.IP_PMTUDISC_DO)
     sock.connect((host, port))
     try:
         sock.send(b'#' * 999999)
     except socket.error:
         print('Alas, the datagram did not make it')
+        # 获取套接字选项
         max_mtu = sock.getsockopt(socket.IPPROTO_IP, IN.IP_MTU)
         print('Actual MTU: {}'.format(max_mtu))
     else:
