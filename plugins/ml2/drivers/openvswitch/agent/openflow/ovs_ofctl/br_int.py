@@ -24,8 +24,8 @@ import netaddr
 from neutron_lib import constants as const
 
 from neutron.common import constants as n_const
-from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants
-from neutron.plugins.ml2.drivers.openvswitch.agent.openflow.ovs_ofctl \
+from ml2.drivers.openvswitch.agent.common import constants
+from ml2.drivers.openvswitch.agent.openflow.ovs_ofctl \
     import ovs_bridge
 
 

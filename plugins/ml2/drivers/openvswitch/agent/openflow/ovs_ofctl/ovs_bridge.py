@@ -16,9 +16,9 @@
 
 
 from neutron.agent.common import ovs_lib
-from neutron.plugins.ml2.drivers.openvswitch.agent.openflow \
+from ml2.drivers.openvswitch.agent.openflow \
     import br_cookie
-from neutron.plugins.ml2.drivers.openvswitch.agent.openflow.ovs_ofctl \
+from ml2.drivers.openvswitch.agent.openflow.ovs_ofctl \
     import ofswitch
 
 
