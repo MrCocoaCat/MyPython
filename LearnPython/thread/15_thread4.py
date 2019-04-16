@@ -25,7 +25,7 @@ def main():
     t1.setName("TH1")
     t1.start()
 
-    t2 = threading.Thread(target=loop2, args= ("b", "c"))
+    t2 = threading.Thread(target=loop2, args=("b", "c"))
     t2.start()
     t2.setName("TH2")
 
