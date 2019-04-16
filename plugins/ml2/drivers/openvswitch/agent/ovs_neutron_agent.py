@@ -130,7 +130,6 @@ class OVSNeutronAgent(l2population_rpc.L2populationRpcCallBackTunnelMixin,
 
     def __init__(self, bridge_classes, ext_manager, conf=None):
         '''Constructor.
-
         :param bridge_classes: a dict for bridge classes.
         :param conf: an instance of ConfigOpts
         '''

@@ -31,7 +31,7 @@ def server(interface, port):
     print('Listening at', sock.getsockname())
     while True:
         print('Waiting to accept a new connection')
-        # 返回一个套接字
+        # 返回一个套接字,这个套接字用于发送消息
         sc, sockname = sock.accept()
         print('We have accepted a connection from', sockname)
         print('  Socket name:', sc.getsockname())
