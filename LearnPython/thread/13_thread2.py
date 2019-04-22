@@ -1,6 +1,7 @@
 import time
 import _thread as thread
 
+
 def loop1(in1):
     print("start loop1 at ",time.ctime())
     print("par ",in1)
@@ -8,7 +9,7 @@ def loop1(in1):
     print("end loop1 at ",time.ctime())
 
 
-def loop2(in1,in2):
+def loop2(in1, in2):
     print("start loop2",time.ctime())
     print("par 1", in1,"par 2", in2 )
     time.sleep(2)

@@ -1,5 +1,5 @@
 import time
-import  threading
+import threading
 
 def loop1(in1):
     print("start loop1 at ",time.ctime())

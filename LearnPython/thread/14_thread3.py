@@ -1,5 +1,5 @@
 import time
-import  threading
+import threading
 
 def loop1(in1):
     print("start loop1 at ",time.ctime())
@@ -24,7 +24,7 @@ def main():
 
     t1.start()
 
-    t2 = threading.Thread(target=loop2, args= ("b", "c"))
+    t2 = threading.Thread(target=loop2, args=("b", "c"))
     t2.start()
 
     t1.join()

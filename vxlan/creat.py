@@ -36,3 +36,4 @@ def run_command(cmd, redirect_output=True, check_exit_code=True):
 
 
 def create_bridge():
+ pass
