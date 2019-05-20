@@ -25,10 +25,10 @@ def indent(elem, level=0):
             elem.tail = i
 
 
-class createxml:
-    def __init__(self, vm_uuid, source_file, vm_name, vnc_port,vm_mac_num, vm_dev):
+class CreatXml:
+    def __init__(self, vm_uuid, vm_source_file, vm_name, vnc_port, vm_mac_num, vm_dev):
         self._vm_uuid = str(vm_uuid)
-        self._source_file = source_file
+        self._source_file = vm_source_file
         self._vnc_port = str(vnc_port)
         self._vm_name = vm_name
         self._mac_num = vm_mac_num
@@ -42,9 +42,10 @@ class createxml:
 
     def genxml(self):
         self.root = ET.Element("domain")
+        self.root.attrib = {'type':'kvm'}
         #创建self.root的子节点sub1，并添加属性
         name = ET.SubElement(self.root, "name")
-        name.text =self._vm_name
+        name.text = self._vm_name
         _uuid = ET.SubElement(self.root, "uuid")
         _uuid.text = self._vm_uuid
 
@@ -55,6 +56,7 @@ class createxml:
         os = ET.SubElement(self.root, "os")
         type = ET.SubElement(os, "type")
         type.attrib = {"arch": "x86_64", "machine": "pc"}
+        type.text='hvm'
         boot = ET.SubElement(os, "boot")
         boot.attrib = {'dev': 'hd'}
 
@@ -64,10 +66,10 @@ class createxml:
         emulator.text = "/usr/libexec/qemu-kvm"
 
         disk = ET.SubElement(devices, "disk")
-        disk.attrib = {"type": 'file', "device": 'disk'}
+        disk.attrib = {"device": 'disk', "type": 'file'}
 
         driver = ET.SubElement(disk, "driver")
-        driver.attrib = {'name':'qemu' ,'type':'qcow2'}
+        driver.attrib = {'name': 'qemu', 'type': 'qcow2'}
 
         source = ET.SubElement(disk, "source")
         source.attrib={'file': self._source_file}
@@ -99,5 +101,5 @@ class createxml:
         tree = ET.ElementTree(self.root)
         tree.write(out_path)
 
-    def delxml(self,out_path):
+    def delxml(self, out_path):
         os.remove(out_path)
