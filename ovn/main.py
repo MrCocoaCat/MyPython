@@ -6,22 +6,25 @@
 
 from createxml import CreatXml
 from tool import run_command
+from tool import CmdException
+
 from ovn import OvnNb
 import uuid
 import os
-import sys
 import argparse
-
-
+from port import port
 
 dirroot = '/root/liyubo/ovn-test2'
+base_qcow2 = dirroot + '/ubuntu-16.04.6.qcow2'
+
+logic_port = {}
 
 def clean(num):
     for i in range(1, num):
         dirname = "ovn-" + str(i)
         dirpath = os.path.join(dirroot, dirname)
-        port = 6000 + i
-        name = "ovn-" + str(port)
+        vnc_port = 6000 + i
+        name = "ovn-" + str(vnc_port)
         qcow2_name = 'ubuntu-' + str(i) + '.qcow2'
         source_file = os.path.join(dirpath, qcow2_name)
         xmlname = name + '.xml'
@@ -37,17 +40,19 @@ def clean(num):
         cmd = ['virsh', 'destroy', name]
         re = run_command(cmd, check_exit_code=False)
         print(re)
+        nb = OvnNb()
+        nb.clean()
 
 
 def start(num):
+    print("start %d" % num)
     for i in range(1, num):
         dirname = "ovn-" + str(i)
         dirpath = os.path.join(dirroot, dirname)
         vm_uuid = uuid.uuid1()
-        port = 6000 + i
-        name = "ovn-" + str(port)
-        mac_num = i
-        dev = "tap" + str(i)
+        vnc_port = 6000 + i
+        name = "ovn-" + str(vnc_port)
+        p = port(i)
         qcow2_name = 'ubuntu-' + str(i) + '.qcow2'
         source_file = os.path.join(dirpath, qcow2_name)
         xmlname = name + '.xml'
@@ -55,14 +60,11 @@ def start(num):
         os.mkdir(dirpath)
         txml = CreatXml(vm_uuid=vm_uuid,
                         vm_source_file=source_file,
-                        vnc_port=port,
-                        vm_mac_num=mac_num,
+                        vnc_port=vnc_port,
                         vm_name=name,
-                        vm_dev=dev)
-
+                        vm_dev=p)
         txml.genxml()
         txml.writexml(xmlpath)
-        base_qcow2 = dirroot + '/ubuntu-16.04.6.qcow2'
         cmd = ['qemu-img', 'create', '-b', base_qcow2, '-fqcow2', source_file]
         re = run_command(cmd, check_exit_code=False)
         print(re)
@@ -70,12 +72,36 @@ def start(num):
         re = run_command(cmd, check_exit_code=False)
         print(re)
 
+        option = 'external_ids:iface-id=%s' % 'p'+str(i)
+        cmd = ['ovs-vsctl', 'set', 'Interface', p.name, ]
+        re = run_command(cmd, check_exit_code=False)
+
+
+def net(num):
+    nb = OvnNb()
+    # try:
+    #     nb.ls_add('s1')
+    # except CmdException as e:
+    #     print(e)
+
+    print(nb.ls_dict)
+    # for i in range(1, num):
+    #     temp_port = port(i, name='p'+str(i))
+    #     nb.lsp_add('s1', temp_port.name)
+    #     nb.lsp_set_addresses(temp_port.name, temp_port.mac)
+    #     nb.lsp_set_port_security(temp_port.name, temp_port.mac)
+
 
 if __name__ == '__main__':
-    choices = {'start': start, 'clean': clean}
+    choices = {'s': start, 'c': clean, 'n': net}
     parser = argparse.ArgumentParser()
-    parser.parse_args()
-
+    parser.add_argument("do", help="define what to do")
+    parser.add_argument("-n", type=int, help="number",default=5)
+    args = parser.parse_args()
+    #print(args.do)
+    #print(args.n)
+    function = choices[args.do]
+    function(args.n+1)
 
 
 

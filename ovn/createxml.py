@@ -6,7 +6,6 @@
 
 import xml.etree.ElementTree as ET
 import os
-import re
 
 
 def indent(elem, level=0):
@@ -26,19 +25,14 @@ def indent(elem, level=0):
 
 
 class CreatXml:
-    def __init__(self, vm_uuid, vm_source_file, vm_name, vnc_port, vm_mac_num, vm_dev):
+    def __init__(self, vm_uuid, vm_source_file, vm_name, vnc_port, vm_dev):
         self._vm_uuid = str(vm_uuid)
         self._source_file = vm_source_file
         self._vnc_port = str(vnc_port)
         self._vm_name = vm_name
-        self._mac_num = vm_mac_num
         self._dev = vm_dev
 
-        self._genmac()
 
-    def _genmac(self):
-        pattern = re.compile('.{2}')
-        self._vm_mac = ':'.join(pattern.findall(str("%012x" % self._mac_num)))
 
     def genxml(self):
         self.root = ET.Element("domain")
@@ -75,12 +69,12 @@ class CreatXml:
         source.attrib={'file': self._source_file}
 
         target = ET.SubElement(disk, "target")
-        target.attrib={'dev': 'hda', 'bus': 'ide'}
+        target.attrib = {'dev': 'hda', 'bus': 'ide'}
 
         interface = ET.SubElement(devices, "interface")
-        interface.attrib={'type': 'bridge'}
+        interface.attrib = {'type': 'bridge'}
         mac = ET.SubElement(interface, "mac")
-        mac.attrib = {'address': self._vm_mac}
+        mac.attrib = {'address': self._dev.mac}
         source = ET.SubElement(interface, "source")
         source.attrib = {'bridge': 'br-int'}
 
@@ -88,13 +82,13 @@ class CreatXml:
         virtualport.attrib = {'type': 'openvswitch'}
 
         target = ET.SubElement(interface, "target")
-        target.attrib = {'dev': self._dev }
+        target.attrib = {'dev': self._dev.name}
 
         model = ET.SubElement(interface, "model")
         model.attrib = {'type': 'virtio'}
 
         graphics = ET.SubElement(devices, "graphics")
-        graphics.attrib = {'type': 'vnc', 'port': self._vnc_port, 'autoport': 'no', 'listen':'0.0.0.0', 'keymap': 'en-us'}
+        graphics.attrib = {'type': 'vnc', 'port': self._vnc_port, 'autoport': 'no', 'listen': '0.0.0.0', 'keymap': 'en-us'}
         indent(self.root)
 
     def writexml(self, out_path):

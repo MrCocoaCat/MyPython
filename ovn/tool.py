@@ -7,6 +7,12 @@
 import os
 import subprocess
 
+
+class CmdException(Exception):
+    def __init__(self, err):
+        self.err = err
+
+
 ROOT = os.path.dirname(os.path.realpath(__file__))
 
 def run_command(cmd, redirect_output=True, check_exit_code=True):
@@ -22,5 +28,7 @@ def run_command(cmd, redirect_output=True, check_exit_code=True):
     output = proc.communicate()[0]
     if check_exit_code and proc.returncode != 0:
         # 程序不返回0，则失败
-        raise Exception('Command "%s" failed.\n%s' % (' '.join(cmd), output))
+        err = 'Command "%s" failed.: %s' % (cmd, output)
+        #e = CmdException(err)
+        raise Exception(err)
     return output
