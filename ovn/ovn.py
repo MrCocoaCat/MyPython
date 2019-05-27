@@ -5,13 +5,14 @@
 # @File    : ovn.py
 
 from tool import run_command
-import re
+
 
 class Switch:
-    def __init__(self, name, uuid):
+    def __init__(self, name, uuid=None):
         self.name = name
         self.uuid = uuid
         self.port = []
+
 
 
 class OvnNb:
@@ -23,7 +24,8 @@ class OvnNb:
 
     def clean(self):
         print(self.ls_dict)
-        for key in self.ls_dict:
+        keys = self.ls_dict.keys()
+        for key in keys:
             self.ls_del(key)
 
     def _syn_ls_dict(self):
@@ -38,15 +40,15 @@ class OvnNb:
             self.ls_dict.setdefault(s.name, s)
 
     def ls_add(self, ls):
+        s = Switch(name=ls)
         cmd = ['ovn-nbctl', 'ls-add', ls]
         run_command(cmd, check_exit_code=True)
-        s = Switch(name=ls)
         self.ls_dict.setdefault(s.name, s)
 
     def ls_del(self, ls):
         cmd = ['ovn-nbctl', 'ls-del', ls]
         run_command(cmd, check_exit_code=True)
-        #self.ls_dict.pop(ls)
+        self.ls_dict.pop(ls)
 
     def lsp_add(self, ls, lsp):
         cmd = ['ovn-nbctl', 'lsp-add', ls, lsp]
@@ -61,16 +63,48 @@ class OvnNb:
         #val.remove(lsp)
 
     @staticmethod
-    def lsp_set_addresses(lsp, mac):
-        cmd = ['ovn-nbctl', 'lsp-set-addresses', lsp, mac]
+    def lsp_set_addresses(lsp, mac, ip=None):
+        if not ip is None:
+            option = mac + " " + ip
+        else:
+            option = mac
+        cmd = ['ovn-nbctl', 'lsp-set-addresses', lsp, option]
         run_command(cmd, check_exit_code=True)
 
     @staticmethod
-    def lsp_set_port_security(lsp, mac):
-        cmd = ['ovn-nbctl', 'lsp_set_port_security', lsp, mac]
+    def lsp_set_port_security(lsp, mac, ip=None):
+        if not ip is None:
+            option = mac + " " + ip
+        else:
+            option = mac
+        cmd = ['ovn-nbctl', 'lsp-set-port-security', lsp, option]
         run_command(cmd, check_exit_code=True)
 
     @staticmethod
-    def lsp_set_port_security(lsp, mac):
-        cmd = ['ovn-nbctl', 'lsp-set-port-security', lsp, mac]
-        run_command(cmd, check_exit_code=True)
+    def create_DHCP_Options(self, cidr):
+        cmd = ['ovn-nbctl', 'create', 'DHCP_Options', 'cidr='+str(cidr)]
+        re = run_command(cmd, check_exit_code=True)
+        return re.strip('\n')
+
+    @staticmethod
+    def dhcp_option_set_options(self, dhcp_option, server_id, server_mac, router, lease_time):
+        cmd = ['ovn-nbctl', 'dhcp-options-set-options', dhcp_option,
+               'server_id='+str(server_id),
+               'server_mac='+server_mac,
+               'router='+router,
+               'lease_time='+str(lease_time)]
+        re = run_command(cmd, check_exit_code=True)
+        print(re)
+        return re
+
+    def ovn_nbctl_lsp_set_dhcpv4_options(self, port, dhcp_options):
+        cmd = ['ovn-nbctl', 'lsp-set-dhcpv4-options', port, dhcp_options]
+        re = run_command(cmd, check_exit_code=True)
+        return re
+
+
+
+
+
+
+
