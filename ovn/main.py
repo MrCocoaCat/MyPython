@@ -4,15 +4,14 @@
 # @Email   : MrCocoaCat@aliyun.com
 # @File    : main.py
 
-from createxml import CreatXml
+from kvm.createxml import CreatXml
 from tool import run_command
-from tool import CmdException
 
-from ovn import OvnNb
+from Ovn.ovn import *
 import uuid
 import os
 import argparse
-from port import port
+
 
 dirroot = '/root/liyubo/ovn-test2'
 base_qcow2 = dirroot + '/ubuntu-16.04.6.qcow2'
@@ -55,15 +54,23 @@ def clean(num):
         re = run_command(cmd, check_exit_code=False)
 
 
+class Port(PortBase):
+    def __init__(self, name, num=None,mac =None):
+        PortBase.__init__(self, name=name, num=num, mac=mac)
+
+
 def start(num):
     print("start %d" % num)
-    for i in range(1, num):
+    for i in range(1, 7):
         dirname = "ovn-" + str(i)
         dirpath = os.path.join(dirroot, dirname)
         vm_uuid = uuid.uuid1()
         vnc_port = 6000 + i
         name = "ovn-" + str(vnc_port)
-        p = port(i)
+        p = Port(name="tap" + str(i), num=i)
+        print(p.mac)
+        print(p.name)
+        print(p.num)
         qcow2_name = 'ubuntu-' + str(i) + '.qcow2'
         source_file = os.path.join(dirpath, qcow2_name)
         xmlname = name + '.xml'
@@ -91,6 +98,7 @@ def start(num):
 def start_netns(num):
     cmdlist = []
     for i in range(1, num):
+        p =SwitchPort(num)
         p = port(i)
         cmd = "ip netns add vm%s" % i
         cmdlist.append(cmd)
@@ -118,14 +126,15 @@ def start_netns(num):
         cmdlist.append(cmd)
 
         cmd = "ip netns exec vm%s ip addr show %s" % (i, p.name)
-        cmdlist.append(cmd)
+        #re = os.popen(cmd)
+        #print(re)
         #cmd = "ip netns exec vm1 ping 10.0.0.2"
         #cmdlist.append(cmd)
 
     for cmd in cmdlist:
         print(cmd)
-        #re = os.popen(cmd)
-        #print(re)
+        os.system(cmd)
+
 
     #cmd = ['ip', 'netns', 'exec', 'vm1', 'ping', '-c', '5', '10.0.0.3']
     # print(cmd)
@@ -135,30 +144,101 @@ def start_netns(num):
 
 def net(num):
     nb = OvnNb()
-    nb.ls_add('s1')
-    dhcp_option = nb.create_DHCP_Options(cidr="10.0.0.0/24")
-    nb.dhcp_option_set_options(dhcp_option=dhcp_option,
-                               server_id=1,
-                               server_mac='00:00:00:00:02:00',
-                               router='10.0.0.254',
-                               lease_time='3600')
-    for i in range(1, num):
-        temp_port = port(i, name='p'+str(i))
-        nb.lsp_add('s1', temp_port.name)
-        ip = '10.0.0.' + str(i)
-        nb.lsp_set_addresses(temp_port.name, temp_port.mac, ip)
-        nb.lsp_set_port_security(temp_port.name, temp_port.mac, ip)
-        nb.ovn_nbctl_lsp_set_dhcpv4_options(temp_port.name, dhcp_option)
+    s1 = Switch("s1")
+    s2 = Switch("s2")
+    s3 = Switch("s3")
+    nb.ls_add(s1)
+    nb.ls_add(s2)
+    nb.ls_add(s3)
+
+    dhcp1 = DHCP(cidr="10.0.1.0/24",
+                 server_id='10.0.1.254',
+                 server_mac='00:00:00:00:02:00',
+                 router='10.0.1.254',
+                 lease_time='3600',)
+
+    dhcp2 = DHCP(cidr="10.0.2.0/24",
+                 server_id='10.0.2.254',
+                 server_mac='00:00:00:00:02:00',
+                 router='10.0.2.254',
+                 lease_time='3600', )
+    dhcp3 = DHCP(cidr="10.0.3.0/24",
+                 server_id='10.0.3.254',
+                 server_mac='00:00:00:00:03:00',
+                 router='10.0.3.254',
+                 lease_time='3600', )
+    for i in range(1, 3):
+        temp_port = SwitchPort(name='p'+str(i),
+                               ip='10.0.1.' + str(i))
+        s1.lsp_add(temp_port)
+        s1.ovn_nbctl_lsp_set_dhcpv4_options(temp_port, dhcp1)
+
+    for i in range(3, 5):
+        temp_port = SwitchPort(name='p' + str(i),
+                               ip='10.0.2.' + str(i))
+        s2.lsp_add(temp_port)
+        s2.ovn_nbctl_lsp_set_dhcpv4_options(temp_port, dhcp2)
+
+    for i in range(5, 7):
+        temp_port = SwitchPort(name='p' + str(i),
+                               ip='10.0.3.' + str(i))
+        s3.lsp_add(temp_port)
+        s3.ovn_nbctl_lsp_set_dhcpv4_options(temp_port, dhcp3)
+
+    r1 = Router("r1")
+    nb.lr_add(r1)
+    r1_s1 = RoutePort(name="r1-s1",
+                      ip="10.0.1.254/24")
+
+    r1_s2 = RoutePort(name="r1-s2",
+                      ip="10.0.2.254/24")
+    r1_s3 = RoutePort(name='r1-s3',
+                      ip="10.0.3.254/24")
+    r1.lr_add_ports([r1_s1, r1_s2, r1_s3])
+
+    s1_r1 = SwitchPort(name="s1-r1",
+                       type="router",
+                       mac="router",
+                       options={'router-port': 'r1-s1'}
+                       )
+    s1.lsp_add(s1_r1)
+    s2_r1 = SwitchPort(name="s2-r1",
+                       type="router",
+                       mac="router",
+                       options={'router-port': 'r1-s2'}
+                       )
+    s2.lsp_add(s2_r1)
+
+    s3_r1 = SwitchPort(name='s3-r1',
+                       type='router',
+                       mac='router',
+                       options={'router-port': 'r1-s3'},
+                       )
+
+    s3.lsp_add(s3_r1)
+    s3_edge1 = SwitchPort(name='s3-edge1',
+                          options={'router-port': 'edge1-s3'},
+                          type='router',
+                          mac='router')
+    s3.lsp_add(s3_edge1)
+
+    ##################
+    edge1 = Router(name='edge1')
+                   #options={"chassis":'123'})
+
+    nb.lr_add(edge1)
+    edge1_s3 = RoutePort(name='edge1-s3',
+                         ip='10.0.3.1/24')
+    edge1.lrp_add(edge1_s3)
+    #
 
 
 if __name__ == '__main__':
     choices = {'s': start, 'c': clean, 'n': net, 'sn': start_netns}
     parser = argparse.ArgumentParser()
     parser.add_argument("do", help="define what to do")
-    parser.add_argument("-n", type=int, help="number", default=2)
+    parser.add_argument("-n", type=int, help="number", default=5)
     args = parser.parse_args()
-    #print(args.do)
-    #print(args.n)
     function = choices[args.do]
     function(args.n+1)
 

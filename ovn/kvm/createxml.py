@@ -32,8 +32,6 @@ class CreatXml:
         self._vm_name = vm_name
         self._dev = vm_dev
 
-
-
     def genxml(self):
         self.root = ET.Element("domain")
         self.root.attrib = {'type':'kvm'}
