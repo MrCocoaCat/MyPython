@@ -43,6 +43,8 @@ class SwitchPort(OvnPort):
             self.type = type
         else:
             self.type = None
+        if (mac is None) and (self.type =="router") :
+            self.mac = "router"
         self.ip = ip
         self.options = options
 
@@ -216,6 +218,24 @@ class Router(RouterBase):
     def lrp_del(self):
         pass
 
+    def lr_route_add(self, prefix, nexthop):
+        cmd = ['ovn-nbctl', 'lr-route-add', self.name, prefix, nexthop]
+        run_command(cmd, check_exit_code=True)
+
+    def lr_nat_add(self, nat_type, external_ip, logical_ip, logical_port=None, external_mac=None):
+        nat_type_tup = ("snat", "dnat", "dnat_and_snat")
+        if nat_type not in nat_type_tup:
+            raise Exception("wrong type")
+        cmd = ['ovn-nbctl', 'lr-nat-add', self.name, nat_type, external_ip, logical_ip]
+        if logical_port is not None:
+            cmd.append(logical_port)
+        if external_mac is not None:
+            cmd.append(external_mac)
+        run_command(cmd, check_exit_code=True)
+
+
+
+
 
 class OvnNb:
     def __init__(self):
@@ -253,6 +273,12 @@ class OvnNb:
         cmd = ['ovn-nbctl', 'ls-add', ls.name]
         run_command(cmd, check_exit_code=True)
         self.ls_dict.setdefault(ls.name, ls)
+
+    def ls_adds(self, ls_list):
+        for ls in ls_list:
+            self.ls_add(ls)
+
+
 
     def ls_del(self, ls):
         cmd = ['ovn-nbctl', 'ls-del', ls.name]

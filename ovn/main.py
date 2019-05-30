@@ -19,7 +19,7 @@ base_qcow2 = dirroot + '/ubuntu-16.04.6.qcow2'
 logic_port = {}
 
 def clean(num):
-    for i in range(1, num):
+    for i in range(1, 7):
         dirname = "ovn-" + str(i)
         dirpath = os.path.join(dirroot, dirname)
         vnc_port = 6000 + i
@@ -147,16 +147,13 @@ def net(num):
     s1 = Switch("s1")
     s2 = Switch("s2")
     s3 = Switch("s3")
-    nb.ls_add(s1)
-    nb.ls_add(s2)
-    nb.ls_add(s3)
+    nb.ls_adds([s1, s2, s3])
 
     dhcp1 = DHCP(cidr="10.0.1.0/24",
                  server_id='10.0.1.254',
                  server_mac='00:00:00:00:02:00',
                  router='10.0.1.254',
                  lease_time='3600',)
-
     dhcp2 = DHCP(cidr="10.0.2.0/24",
                  server_id='10.0.2.254',
                  server_mac='00:00:00:00:02:00',
@@ -189,7 +186,6 @@ def net(num):
     nb.lr_add(r1)
     r1_s1 = RoutePort(name="r1-s1",
                       ip="10.0.1.254/24")
-
     r1_s2 = RoutePort(name="r1-s2",
                       ip="10.0.2.254/24")
     r1_s3 = RoutePort(name='r1-s3',
@@ -198,39 +194,59 @@ def net(num):
 
     s1_r1 = SwitchPort(name="s1-r1",
                        type="router",
-                       mac="router",
                        options={'router-port': 'r1-s1'}
                        )
     s1.lsp_add(s1_r1)
     s2_r1 = SwitchPort(name="s2-r1",
                        type="router",
-                       mac="router",
                        options={'router-port': 'r1-s2'}
                        )
     s2.lsp_add(s2_r1)
 
     s3_r1 = SwitchPort(name='s3-r1',
                        type='router',
-                       mac='router',
                        options={'router-port': 'r1-s3'},
                        )
 
     s3.lsp_add(s3_r1)
     s3_edge1 = SwitchPort(name='s3-edge1',
                           options={'router-port': 'edge1-s3'},
-                          type='router',
-                          mac='router')
+                          type='router')
     s3.lsp_add(s3_edge1)
 
     ##################
-    edge1 = Router(name='edge1')
-                   #options={"chassis":'123'})
+    edge1 = Router(name='edge1',
+                   options={"chassis": '123'})
 
     nb.lr_add(edge1)
     edge1_s3 = RoutePort(name='edge1-s3',
                          ip='10.0.3.1/24')
-    edge1.lrp_add(edge1_s3)
-    #
+    edge1_outside = RoutePort(name="edge1-outside",
+                              ip="192.168.125.203/24")
+    edge1.lr_add_ports([edge1_s3, edge1_outside])
+
+    edge1.lr_route_add(prefix="10.0.0.0/16",
+                       nexthop="10.0.3.254")
+    edge1.lr_nat_add(nat_type="dnat_and_snat",
+                     external_ip="192.168.125.201",
+                     logical_ip="10.0.1.1")
+
+    r1.lr_route_add(prefix="0.0.0.0/0",
+                    nexthop="10.0.3.1")
+
+    outside = Switch(name="outside")
+    nb.ls_add(outside)
+    outside_edge1 = SwitchPort(name="outside-edge1",
+                               type="router",
+                               options={"router-port": "edge1-outside"})
+
+    outside_localnet = SwitchPort(name="outside-localnet",
+                                  mac="unknown",
+                                  type="localnet",
+                                  options={"network_name": "dataNet"})
+    outside.ls_add_ports([outside_edge1, outside_localnet])
+
+
 
 
 if __name__ == '__main__':
