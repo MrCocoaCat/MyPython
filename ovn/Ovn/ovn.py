@@ -4,8 +4,16 @@
 # @Email   : MrCocoaCat@aliyun.com
 # @File    : ovn.py
 
-from tool import run_command
-from Base.base import *
+
+from Base.base import PortBase
+from Base.base import SwitchBase
+from Base.base import RouterBase
+from Base.base import run_command
+
+
+class CmdException(Exception):
+    def __init__(self, err):
+        self.err = err
 
 
 class OvnPort(PortBase):
@@ -50,15 +58,17 @@ class SwitchPort(OvnPort):
 
 
 class RoutePort(OvnPort):
-    def __init__(self, name, ip, num=None, mac=None):
+    def __init__(self, name, ip, num=None, mac=None, peer=None):
         OvnPort.__init__(self, name, mac=mac, num=num)
         self.ip = ip
+        self.peer = peer
 
 
 class Switch(SwitchBase):
     def __init__(self, name, uuid=None):
         SwitchBase.__init__(self, name=name)
         self.uuid = uuid
+        self.nb_flag = False
         #self._syn_ports()
 
     def _syn_ports(self):
@@ -70,7 +80,7 @@ class Switch(SwitchBase):
             name = ltemp[1].strip('()')
             uuid = ltemp[0]
             s = SwitchPort(name=name, uuid=uuid)
-            self.ports.append(s)
+            self._ports_list.append(s)
 
     def lsp_add(self, port):
         if not isinstance(port, SwitchPort):
@@ -78,7 +88,7 @@ class Switch(SwitchBase):
 
         cmd = ['ovn-nbctl', 'lsp-add', self.name, port.name]
         run_command(cmd, check_exit_code=True)
-        self.ports.append(port)
+        self._ports_list.append(port)
 
         self.lsp_set_addresses(port)
         self.lsp_set_type(port)
@@ -99,7 +109,8 @@ class Switch(SwitchBase):
         run_command(cmd, check_exit_code=True)
         self.ports.pop(port)
 
-    def lsp_set_addresses(self, port, mac=None, ip=None):
+    @staticmethod
+    def lsp_set_addresses(port, mac=None, ip=None):
         tem_mac = None
         tem_ip = None
         if isinstance(port, SwitchPort):
@@ -126,7 +137,8 @@ class Switch(SwitchBase):
         cmd = ['ovn-nbctl', 'lsp-set-addresses', port_name, option]
         run_command(cmd, check_exit_code=True)
 
-    def lsp_set_port_security(self, port, mac=None,ip=None):
+    @staticmethod
+    def lsp_set_port_security(port, mac=None, ip=None):
         tem_mac = None
         tem_ip = None
         if isinstance(port, SwitchPort):
@@ -153,7 +165,8 @@ class Switch(SwitchBase):
         cmd = ['ovn-nbctl', 'lsp-set-port-security', port_name, option]
         run_command(cmd, check_exit_code=True)
 
-    def ovn_nbctl_lsp_set_dhcpv4_options(self, port, dhcp):
+    @staticmethod
+    def ovn_nbctl_lsp_set_dhcpv4_options(port, dhcp):
         if isinstance(port, SwitchPort):
             tem_port = port
         elif isinstance(port, str):
@@ -168,14 +181,16 @@ class Switch(SwitchBase):
         re = run_command(cmd, check_exit_code=True)
         return re
 
-    def lsp_set_type(self, port):
+    @staticmethod
+    def lsp_set_type(port):
         if not isinstance(port, SwitchPort):
             raise Exception("wrong type")
         cmd = ['ovn-nbctl', 'lsp-set-type', port.name, port.type]
         if port.type is not None:
             run_command(cmd, check_exit_code=True)
 
-    def lsp_set_options(self, port):
+    @staticmethod
+    def lsp_set_options(port):
         if not isinstance(port, SwitchPort):
             raise Exception("wrong type")
         cmd = ['ovn-nbctl', 'lsp-set-options', port.name]
@@ -192,6 +207,8 @@ class Router(RouterBase):
         RouterBase.__init__(self, name=name)
         self.uuid = uuid
         self.options = options
+        self._route_list = []
+        self._nat_list = []
 
     def _syn_ports(self):
         cmd = ['ovn-nbctl', 'lsp-list', self.name]
@@ -202,27 +219,49 @@ class Router(RouterBase):
             name = ltemp[1].strip('()')
             uuid = ltemp[0]
             s = SwitchPort(name=name, uuid=uuid)
-            self.ports.append(s)
+            self._ports_list.append(s)
 
-    def lrp_add(self, port):
+    def _syn_nats(self):
+        pass
+
+    def _syn_routes(self):
+        pass
+
+    def add_port(self, port):
         if not isinstance(port, RoutePort):
             raise Exception("wrong type")
         cmd = ['ovn-nbctl', 'lrp-add', self.name, port.name, port.mac, port.ip]
+        if port.peer is not None:
+            cmd.append("peer="+port.peer)
         run_command(cmd, check_exit_code=True)
-        self.ports.append(port)
+        self._ports_list.append(port)
 
-    def lr_add_ports(self, port_list):
+    def add_ports(self, port_list):
         for port in port_list:
-            self.lrp_add(port)
+            self.add_port(port)
 
-    def lrp_del(self):
-        pass
+    def del_port(self, port):
+        if not isinstance(port, RoutePort):
+            raise Exception("wrong type")
+        cmd = ['ovn-nbctl', 'lrp-del', self.name, port.name]
+        run_command(cmd, check_exit_code=True)
+        self._ports_list.pop(port)
 
-    def lr_route_add(self, prefix, nexthop):
+    def del_ports(self,port_list):
+        for port in port_list:
+            self.del_port(port)
+
+    def add_route(self, prefix, nexthop):
         cmd = ['ovn-nbctl', 'lr-route-add', self.name, prefix, nexthop]
         run_command(cmd, check_exit_code=True)
 
-    def lr_nat_add(self, nat_type, external_ip, logical_ip, logical_port=None, external_mac=None):
+    def del_route(self, prefix=None):
+        cmd = ['ovn-nbctl', 'lr-route-add', self.name]
+        if prefix is not None:
+            cmd.append(prefix)
+        run_command(cmd, check_exit_code=True)
+
+    def add_nat(self, nat_type, external_ip, logical_ip, logical_port=None, external_mac=None):
         nat_type_tup = ("snat", "dnat", "dnat_and_snat")
         if nat_type not in nat_type_tup:
             raise Exception("wrong type")
@@ -232,9 +271,6 @@ class Router(RouterBase):
         if external_mac is not None:
             cmd.append(external_mac)
         run_command(cmd, check_exit_code=True)
-
-
-
 
 
 class OvnNb:
@@ -277,8 +313,6 @@ class OvnNb:
     def ls_adds(self, ls_list):
         for ls in ls_list:
             self.ls_add(ls)
-
-
 
     def ls_del(self, ls):
         cmd = ['ovn-nbctl', 'ls-del', ls.name]
@@ -327,4 +361,7 @@ class DHCP():
 
 
 
+"""
+ovn-nbctl --columns=name list Logical_Router_Port    --format=json
+"""
 

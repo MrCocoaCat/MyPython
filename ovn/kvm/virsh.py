@@ -3,3 +3,5 @@
 # @Author  : MrCocoaCat
 # @Email   : MrCocoaCat@aliyun.com
 # @File    : virsh.py
+
+import libvirt

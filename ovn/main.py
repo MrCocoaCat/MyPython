@@ -5,7 +5,6 @@
 # @File    : main.py
 
 from kvm.createxml import CreatXml
-from tool import run_command
 
 from Ovn.ovn import *
 import uuid
@@ -13,10 +12,9 @@ import os
 import argparse
 
 
-dirroot = '/root/liyubo/ovn-test2'
+dirroot = '/root/liyubo/ovn-test2/build/'
 base_qcow2 = dirroot + '/ubuntu-16.04.6.qcow2'
 
-logic_port = {}
 
 def clean(num):
     for i in range(1, 7):
@@ -48,10 +46,10 @@ def clean(num):
         run_command(cmd, check_exit_code=False)
 
     cmd = ['ovs-vsctl', 'list-ports', 'br-int']
-    re = run_command(cmd, check_exit_code=False)
+    run_command(cmd, check_exit_code=False)
     for port in re.split():
         cmd = ['ovs-vsctl', 'del-port', 'br-int', port]
-        re = run_command(cmd, check_exit_code=False)
+        run_command(cmd, check_exit_code=False)
 
 
 class Port(PortBase):
@@ -95,54 +93,7 @@ def start(num):
         run_command(cmd, check_exit_code=False)
 
 
-def start_netns(num):
-    cmdlist = []
-    for i in range(1, num):
-        p =SwitchPort(num)
-        p = port(i)
-        cmd = "ip netns add vm%s" % i
-        cmdlist.append(cmd)
-
-        cmd = "ovs-vsctl add-port br-int %s -- set interface %s type=internal" % (p.name, p.name)
-        cmdlist.append(cmd)
-
-        cmd = "ip link set %s address  %s" % (p.name, p.mac)
-        cmdlist.append(cmd)
-
-        cmd = "ip link set %s netns vm%s" % (p.name, i)
-        cmdlist.append(cmd)
-
-        #ip = "10.0.0."+str(i)
-        #cmd = "ip netns exec vm%s ip addr add local %s/24 dev %s " % (i, ip, p.name)
-        #cmdlist.append(cmd)
-
-        cmd = "ip netns exec vm%s ip link set %s up" % (i, p.name)
-        cmdlist.append(cmd)
-
-        cmd = "ovs-vsctl set Interface %s external_ids:iface-id=p%s" % (p.name, i)
-        cmdlist.append(cmd)
-
-        cmd = "ip netns exec vm%s dhclient %s" % (i, p.name)
-        cmdlist.append(cmd)
-
-        cmd = "ip netns exec vm%s ip addr show %s" % (i, p.name)
-        #re = os.popen(cmd)
-        #print(re)
-        #cmd = "ip netns exec vm1 ping 10.0.0.2"
-        #cmdlist.append(cmd)
-
-    for cmd in cmdlist:
-        print(cmd)
-        os.system(cmd)
-
-
-    #cmd = ['ip', 'netns', 'exec', 'vm1', 'ping', '-c', '5', '10.0.0.3']
-    # print(cmd)
-    #re = run_command(cmd, check_exit_code=False)
-    #print(re)
-
-
-def net(num):
+def net_test(num):
     nb = OvnNb()
     s1 = Switch("s1")
     s2 = Switch("s2")
@@ -190,7 +141,7 @@ def net(num):
                       ip="10.0.2.254/24")
     r1_s3 = RoutePort(name='r1-s3',
                       ip="10.0.3.254/24")
-    r1.lr_add_ports([r1_s1, r1_s2, r1_s3])
+    r1.add_ports([r1_s1, r1_s2, r1_s3])
 
     s1_r1 = SwitchPort(name="s1-r1",
                        type="router",
@@ -222,16 +173,18 @@ def net(num):
     edge1_s3 = RoutePort(name='edge1-s3',
                          ip='10.0.3.1/24')
     edge1_outside = RoutePort(name="edge1-outside",
-                              ip="192.168.125.203/24")
-    edge1.lr_add_ports([edge1_s3, edge1_outside])
+                              ip="192.168.125.201/24")
+    edge1.add_ports([edge1_s3, edge1_outside])
 
-    edge1.lr_route_add(prefix="10.0.0.0/16",
+    edge1.add_route(prefix="10.0.0.0/16",
                        nexthop="10.0.3.254")
-    edge1.lr_nat_add(nat_type="dnat_and_snat",
+    edge1.add_route(prefix="0.0.0.0/0",
+                       nexthop="192.168.125.254")
+    edge1.add_nat(nat_type="snat",
                      external_ip="192.168.125.201",
-                     logical_ip="10.0.1.1")
+                     logical_ip="10.0.0.0/16")
 
-    r1.lr_route_add(prefix="0.0.0.0/0",
+    r1.add_route(prefix="0.0.0.0/0",
                     nexthop="10.0.3.1")
 
     outside = Switch(name="outside")
@@ -247,10 +200,12 @@ def net(num):
     outside.ls_add_ports([outside_edge1, outside_localnet])
 
 
+def net(num):
+    print(num)
 
 
 if __name__ == '__main__':
-    choices = {'s': start, 'c': clean, 'n': net, 'sn': start_netns}
+    choices = {'s': start, 'c': clean, 'n': net}
     parser = argparse.ArgumentParser()
     parser.add_argument("do", help="define what to do")
     parser.add_argument("-n", type=int, help="number", default=5)

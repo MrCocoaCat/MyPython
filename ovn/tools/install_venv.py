@@ -35,6 +35,7 @@ def die(message, *args):
     print >> sys.stderr, message % args
     sys.exit(1)
 
+
 # 执行系统命令函数
 def run_command(cmd, redirect_output=True, check_exit_code=True):
     """
