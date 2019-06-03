@@ -10,7 +10,6 @@ from Base.base import SwitchBase
 from Base.base import RouterBase
 from Base.base import run_command
 
-
 class CmdException(Exception):
     def __init__(self, err):
         self.err = err
@@ -34,7 +33,6 @@ class OvnPort(PortBase):
             self.mac = self._gen_mac(self.num)
 
         self.uuid = uuid
-        #print("OvnPort",self.mac)
 
 
 class SwitchPort(OvnPort):
@@ -65,22 +63,27 @@ class RoutePort(OvnPort):
 
 
 class Switch(SwitchBase):
-    def __init__(self, name, uuid=None):
+    def __init__(self, name, uuid=None, acls=None, dns_records=None, external_ids=None,
+                 load_balancer=None, other_config=None, ports=None, qos_rules=None):
         SwitchBase.__init__(self, name=name)
-        self.uuid = uuid
-        self.nb_flag = False
-        #self._syn_ports()
-
-    def _syn_ports(self):
-        cmd = ['ovn-nbctl', 'lsp-list', self.name]
-        res = run_command(cmd, check_exit_code=True)
-        lines = res.splitlines()
-        for line in lines:
-            ltemp = line.split()
-            name = ltemp[1].strip('()')
-            uuid = ltemp[0]
-            s = SwitchPort(name=name, uuid=uuid)
-            self._ports_list.append(s)
+        self._uuid = uuid
+        self.acls = acls or []
+        self.dns_records = dns_records or []
+        self.external_ids = external_ids or {}
+        self.load_balancer = load_balancer or []
+        self.other_config = other_config or {}
+        self.ports = ports or []
+        self.qos_rules = qos_rules or []
+    # def _syn_ports(self):
+    #     cmd = ['ovn-nbctl', 'lsp-list', self.name]
+    #     res = run_command(cmd, check_exit_code=True)
+    #     lines = res.splitlines()
+    #     for line in lines:
+    #         ltemp = line.split()
+    #         name = ltemp[1].strip('()')
+    #         uuid = ltemp[0]
+    #         s = SwitchPort(name=name, uuid=uuid)
+    #         self._ports_list.append(s)
 
     def lsp_add(self, port):
         if not isinstance(port, SwitchPort):
@@ -88,13 +91,12 @@ class Switch(SwitchBase):
 
         cmd = ['ovn-nbctl', 'lsp-add', self.name, port.name]
         run_command(cmd, check_exit_code=True)
-        self._ports_list.append(port)
-
+        #self.ports.append(port)
         self.lsp_set_addresses(port)
         self.lsp_set_type(port)
         self.lsp_set_options(port)
 
-    def ls_add_ports(self,ports_list):
+    def ls_add_ports(self, ports_list):
         for port in ports_list:
             self.lsp_add(port)
 
@@ -107,7 +109,7 @@ class Switch(SwitchBase):
             raise Exception("wrong type")
         cmd = ['ovn-nbctl', 'lsp-del', self.name, port_name]
         run_command(cmd, check_exit_code=True)
-        self.ports.pop(port)
+        #self.ports.pop(port)
 
     @staticmethod
     def lsp_set_addresses(port, mac=None, ip=None):

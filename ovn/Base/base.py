@@ -46,7 +46,7 @@ class PortBase:
 class SwitchBase:
     def __init__(self, name):
         self.name = name
-        self._ports_list = []
+        self.ports = []
 
 
 class RouterBase:

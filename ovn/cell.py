@@ -1,12 +1,11 @@
 import json
 
-
-def recell(l):
+def cell(l):
     if isinstance(l, list) and len(l) == 2:
         if l[0] == "map":
             return dict(l[1])
         if l[0] == "set":
-            return [recell(i) for i in l[1]]
+            return [cell(i) for i in l[1]]
         if l[0] == "uuid":
             return str(l[1])
     else:
@@ -26,8 +25,8 @@ data = [recell(i) for i in data[0]]
 re = dict(zip(head, data))
 #print re
 
-for k, v in re.items():
-    print k, v
+#for k, v in re.items():
+#    print k, v
 
 #la = lambda x, y, z: x + y + z
 #print(la(1, 2, 3))
