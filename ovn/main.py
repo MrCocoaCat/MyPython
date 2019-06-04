@@ -10,7 +10,7 @@ from Ovn.ovn import *
 import uuid
 import os
 import argparse
-
+from tools.install_venv import run_command
 
 dirroot = '/root/liyubo/ovn-test2/build/'
 base_qcow2 = dirroot + '/ubuntu-16.04.6.qcow2'
@@ -75,9 +75,6 @@ def clean(num):
     #     run_command(cmd, check_exit_code=False)
 
 
-class Port(PortBase):
-    def __init__(self, name, num=None,mac =None):
-        PortBase.__init__(self, name=name, num=num, mac=mac)
 
 
 def start(num):
@@ -256,43 +253,24 @@ def net_test(num):
 
 
 def net(num):
-    nb = OvnNb()
-    s1 = Switch("s1")
-    s2 = Switch("s2")
-    nb.ls_adds([s1, s2])
-
-    dhcp1 = DHCP(cidr="10.0.1.0/24",
-                 server_id='10.0.1.254',
-                 server_mac='00:00:00:00:02:00',
-                 router='10.0.1.254',
-                 lease_time='3600', )
-    dhcp2 = DHCP(cidr="10.0.2.0/24",
-                 server_id='10.0.2.254',
-                 server_mac='00:00:00:00:02:00',
-                 router='10.0.2.254',
-                 lease_time='3600', )
-
-    for i in range(1, num):
-        temp_port1 = SwitchPort(name='p' + str(i),
-                                ip='10.0.1.' + str(i))
-        s1.lsp_add(temp_port1)
-        s1.ovn_nbctl_lsp_set_dhcpv4_options(temp_port1, dhcp1)
-
-    for i in range(10, num+10):
-        temp_port2 = SwitchPort(name='p' + str(i),
-                                ip='10.0.2.' + str(i))
-        s2.lsp_add(temp_port2)
-        s2.ovn_nbctl_lsp_set_dhcpv4_options(temp_port2, dhcp2)
+    ovn = OvnNb()
+    p1 = SwitchPort(name="p1")
+    # print(p1.name)
+    ovn.add_switch_port(p1)
+    #s1 = Switch(name="s1", ports=[p1.get_uuid()])
+    #ovn.add_switch(s1)
+    #print(s1)
 
 
 if __name__ == '__main__':
-    choices = {'s': start, 'c': clean, 'n': net}
-    parser = argparse.ArgumentParser()
-    parser.add_argument("do", help="define what to do")
-    parser.add_argument("-n", type=int, help="number", default=5)
-    args = parser.parse_args()
-    function = choices[args.do]
-    function(args.n+1)
+    # choices = {'s': start, 'c': clean, 'n': net}
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("do", help="define what to do")
+    # parser.add_argument("-n", type=int, help="number", default=5)
+    # args = parser.parse_args()
+    # function = choices[args.do]
+    # function(args.n+1)
+    net(1)
 
 
 
