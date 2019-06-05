@@ -187,16 +187,27 @@ class Switch(LogicalBase):
 
 
 class RoutePort:
-    def __init__(self, name, ip, num=None, mac=None, peer=None):
-        self.ip = ip
-        self.peer = peer
+    def __init__(self,enabled, external_ids, load_balancer,name, nat , options , mac=None, peer=None):
 
-
-class Router():
-    def __init__(self, name, uuid=None, options=None):
         self.name = name
-        self.uuid = uuid
-        self.options = options
+        self.enabled =enabled
+        self.external_ids =external_ids
+        self.load_balancer =load_balancer
+        self.nat =nat
+
+
+class Router(LogicalBase):
+    def __init__(self, _uuid, enabled=None, external_ids=None, load_balancer=None,name=None, nat=None
+                 , options=None , ports=None, static_routes=None):
+        LogicalBase.__init__(self, _uuid)
+        self.name = name
+        self.enabled = enabled or []
+        self.external_ids = external_ids or {}
+        self.load_balancer = load_balancer or []
+        self.nat = nat or []
+        self.options = options or {}
+        self.ports = ports or []
+        self.static_routes =static_routes or []
 
     def _syn_ports(self):
         cmd = ['ovn-nbctl', 'lsp-list', self.name]
