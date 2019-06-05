@@ -28,8 +28,6 @@ def run_command(cmd, redirect_output=True, check_exit_code=True):
 
 
 
-
-
 class PortBase:
     def __init__(self, name, mac=None, num=None):
         self.name = name
