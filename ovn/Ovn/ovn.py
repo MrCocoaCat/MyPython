@@ -3,7 +3,7 @@
 # @Author  : MrCocoaCat
 # @Email   : MrCocoaCat@aliyun.com
 # @File    : ovn.py
-import json
+
 import yaml
 from tools.install_venv import run_command
 
@@ -171,7 +171,5 @@ class OvnNb:
 
 
 
-"""
-ovn-nbctl --columns=name list Logical_Router_Port    --format=json
-"""
+
 
