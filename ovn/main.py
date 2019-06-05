@@ -116,9 +116,6 @@ def start(num):
         domain(port2, i+1)
 
 
-
-
-
 if __name__ == '__main__':
     choices = {'c': clean, 's': start}
     parser = argparse.ArgumentParser()
