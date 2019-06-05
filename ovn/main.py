@@ -5,7 +5,6 @@
 # @File    : main.py
 
 from kvm.createxml import CreatXml
-
 from Ovn.ovn import *
 import uuid
 import os
@@ -119,7 +118,7 @@ def start(num):
 if __name__ == '__main__':
     choices = {'c': clean, 's': start}
     parser = argparse.ArgumentParser()
-    parser.add_argument("do", help="define what to do", default='s')
+    parser.add_argument("do", type=str, help="define what to do", default='s')
     parser.add_argument("-n", type=int, help="number", default=5)
     args = parser.parse_args()
     function = choices[args.do]
