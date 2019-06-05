@@ -25,14 +25,17 @@ def indent(elem, level=0):
 
 
 class CreatXml:
-    def __init__(self, vm_uuid, vm_source_file, vm_name, vnc_port, vm_dev):
+    def __init__(self, vm_uuid, vm_source_file, vm_name, vnc_port, vm_dev_name,vm_dev_mac):
         self._vm_uuid = str(vm_uuid)
         self._source_file = vm_source_file
         self._vnc_port = str(vnc_port)
         self._vm_name = vm_name
-        self._dev = vm_dev
+        self._dev_name = vm_dev_name
+        self._dev_mac = vm_dev_mac
 
-    def genxml(self):
+        self._genxml()
+
+    def _genxml(self):
         self.root = ET.Element("domain")
         self.root.attrib = {'type':'kvm'}
         #创建self.root的子节点sub1，并添加属性
@@ -72,7 +75,7 @@ class CreatXml:
         interface = ET.SubElement(devices, "interface")
         interface.attrib = {'type': 'bridge'}
         mac = ET.SubElement(interface, "mac")
-        mac.attrib = {'address': self._dev.mac}
+        mac.attrib = {'address': self._dev_mac}
         source = ET.SubElement(interface, "source")
         source.attrib = {'bridge': 'br-int'}
 
@@ -80,7 +83,7 @@ class CreatXml:
         virtualport.attrib = {'type': 'openvswitch'}
 
         target = ET.SubElement(interface, "target")
-        target.attrib = {'dev': self._dev.name}
+        target.attrib = {'dev': self._dev_name}
 
         model = ET.SubElement(interface, "model")
         model.attrib = {'type': 'virtio'}
