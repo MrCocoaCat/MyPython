@@ -62,6 +62,10 @@ class LogicalBase:
 
 
 class NAT(LogicalBase):
+    """
+    NAT
+    NAT rules
+    """
     def __init__(self, _uuid=None, external_ids=None, external_ip=None, external_mac=None,
                  logical_ip=None, logical_port=None, type=None):
         LogicalBase.__init__(self, _uuid)
@@ -120,7 +124,7 @@ class SwitchPort(LogicalBase):
 
 class Switch(LogicalBase):
     """
-    Logical_Switch  Table
+    Logical_Switch
     L2 logical switch
     """
     def __init__(self, name, _uuid=None, acls=None, dns_records=None, external_ids=None,
@@ -208,6 +212,10 @@ class Switch(LogicalBase):
 
 
 class RoutePort(LogicalBase):
+    """
+    Logical_Router_Port
+    logical router port
+    """
     def __init__(self, name, _uuid=None, enabled=None, external_ids=None, gateway_chassis=None,
                  ipv6_ra_configs=None, mac=None, network=None, options=None, peer=None):
         LogicalBase.__init__(self, _uuid)
@@ -223,6 +231,10 @@ class RoutePort(LogicalBase):
 
 
 class Router(LogicalBase):
+    """
+    Logical_Router
+    L3 logical router      |
+    """
     def __init__(self, _uuid=None, enabled=None, external_ids=None, load_balancer=None,name=None, nat=None
                  , options=None, ports=None, static_routes=None):
         LogicalBase.__init__(self, _uuid)
