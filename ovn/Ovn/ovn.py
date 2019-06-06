@@ -82,15 +82,21 @@ class NAT(LogicalBase):
         else:
             raise Exception("wrong type")
 
+
 class RouterStaticRoute(LogicalBase):
-    def __init__(self,_uuid, external_ids=None, ip_prefix=None,
-                 nexthop =None, output_port=None, policy=None):
+    """
+    Logical_Router_Static_Route
+    Logical router static routes
+    """
+    def __init__(self, _uuid=None, external_ids=None, ip_prefix=None,
+                  nexthop=None, output_port=None, policy=None):
         LogicalBase.__init__(self,_uuid)
         self.external_ids = external_ids
         self.ip_prefix = ip_prefix
         self.nexthop = nexthop
         self.output_port = output_port
         self.policy = policy
+
 
 class SwitchPort(LogicalBase):
     """
@@ -293,9 +299,14 @@ class Router(LogicalBase):
         for port in port_list:
             self.del_port(port)
 
-    def add_route(self, prefix, nexthop):
-        cmd = ['ovn-nbctl', 'lr-route-add', self.name, prefix, nexthop]
-        run_command(cmd, check_exit_code=True)
+    def add_route(self, static_route):
+        if not isinstance(static_route,RouterStaticRoute):
+            raise Exception("W")
+        cmd = ['ovn-nbctl', 'lr-route-add', self.name, static_route.ip_prefix, static_route.nexthop]
+        if static_route.output_port:
+            cmd.append(static_route.output_port)
+        if static_route.ip_prefix and static_route.nexthop:
+            run_command(cmd, check_exit_code=True)
 
     def del_route(self, prefix=None):
         cmd = ['ovn-nbctl', 'lr-route-add', self.name]
@@ -385,10 +396,20 @@ class OvnNb:
         for key, val in router.__dict__.items():
             if key == "_uuid":
                 continue
-            if val:
+            if isinstance(val, dict):
+                temp = []
+                for key1, val1 in val.items():
+                    temp.append(key1 + "=" + val1)
+                if temp:
+                    option = key + ":"+"".join(temp)
+                    cmd.append(option)
+
+            elif val:
                 option = key + "=" + str(val)
                 cmd.append(option)
+        print(" ".join(cmd))
         uuid = run_command(cmd).strip('\n')
+
         router.set_uuid(uuid)
         self.switch_dict.setdefault(uuid, router.name)
         return router

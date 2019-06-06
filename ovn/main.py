@@ -61,11 +61,8 @@ def clean(num):
 
     cmd = "ovn-nbctl --all destroy Logical_Router"
     os.system(cmd)
-    # cmd = ['ovs-vsctl', 'list-ports', 'br-int']
-    # run_command(cmd, check_exit_code=False)
-    # for port in re.split():
-    #     cmd = ['ovs-vsctl', 'del-port', 'br-int', port]
-    #     run_command(cmd, check_exit_code=False)
+
+    os.system("ovs-vsctl --if-exists del-br br9s0f0")
 
 
 def domain(logic_port, num):
@@ -106,6 +103,10 @@ def start(num):
                  router='10.0.1.254',
                  lease_time='3600', )
     ovn = OvnNb()
+    os.system("ovs-vsctl add-br br9s0f0")
+    os.system("ovs-vsctl add-port br9s0f0 enp9s0f0  ")
+    os.system("ip addr add 10.127.0.130/24 dev  br9s0f0")
+    os.system("ip link set  br9s0f0 up")
 
     for i in list(range(1, num))[::2]:
         print(i)
@@ -120,23 +121,23 @@ def start(num):
         domain(port1, i)
         domain(port2, i+1)
         # 路由器
-        r1 = Router(name="r"+str(i))
+        r1 = Router(name="r"+str(i),options={"chassis":"123"})
         ovn.add_router(r1)
-        out = RoutePort(name="out"+str(i), mac=generate_mac(), network="192.168.125.124")
-                        # peer="out_peer"+str(i))
-        port_p = RoutePort(name="pr" + str(i), mac=generate_mac(), network="10.0.1.254")
-                        # peer="pr_peer" + str(i))
+        out = RoutePort(name="out"+str(i), mac=generate_mac(), network="10.127.0.10/24")
+        port_p = RoutePort(name="pr" + str(i), mac=generate_mac(), network="10.0.1.254/24")
+
         r1.add_ports([port_p, out])
-        # r1.add_nat(NAT(type='snat', external_ip='192.168.126.201', logical_ip='10.0.1.0/24'))
+        # r1.add_route(RouterStaticRoute(ip_prefix="10.0.0.0/24", nexthop="10.0.0.254"))
+        r1.add_nat(NAT(type='snat', external_ip='10.127.0.10', logical_ip='10.0.1.0/24'))
         #
         # # 交换机outside
-        # outside = Switch(name="outside")
-        # ovn.add_switch(outside)
-        # outside_localnet = SwitchPort(name="outside-localnet", type="localnet", addresses="unknown",
-        #                               options={'network_name': 'dataNet'})
-        # port = SwitchPort(name="out_peer" + str(i + 1), type="router", addresses="router",
-        #                   options={'router-port': "out" + str(i)})
-        # outside.add_ports([port, outside_localnet])
+        outside = Switch(name="outside")
+        ovn.add_switch(outside)
+        outside_localnet = SwitchPort(name="outside-localnet", type="localnet", addresses="unknown",
+                                      options={'network_name': 'dataNet'})
+        port = SwitchPort(name="out_peer" + str(i + 1), type="router", addresses="router",
+                          options={'router-port': "out" + str(i)})
+        outside.add_ports([port, outside_localnet])
 
 
 
