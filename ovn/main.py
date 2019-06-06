@@ -121,15 +121,13 @@ def start(num):
         domain(port1, i)
         domain(port2, i+1)
         # 路由器
-        r1 = Router(name="r"+str(i),options={"chassis":"123"})
+        r1 = Router(name="r"+str(i), options={"chassis": "123"})
         ovn.add_router(r1)
         out = RoutePort(name="out"+str(i), mac=generate_mac(), network="10.127.0.10/24")
         port_p = RoutePort(name="pr" + str(i), mac=generate_mac(), network="10.0.1.254/24")
 
         r1.add_ports([port_p, out])
-        # r1.add_route(RouterStaticRoute(ip_prefix="10.0.0.0/24", nexthop="10.0.0.254"))
         r1.add_nat(NAT(type='snat', external_ip='10.127.0.10', logical_ip='10.0.1.0/24'))
-        #
         # # 交换机outside
         outside = Switch(name="outside")
         ovn.add_switch(outside)
@@ -138,7 +136,6 @@ def start(num):
         port = SwitchPort(name="out_peer" + str(i + 1), type="router", addresses="router",
                           options={'router-port': "out" + str(i)})
         outside.add_ports([port, outside_localnet])
-
 
 
 if __name__ == '__main__':
