@@ -10,7 +10,9 @@ from tools.install_venv import run_command
 import re
 
 num = 1
-def GenerateMac():
+
+
+def generate_mac():
     global num
     num += 1
     pattern = re.compile('.{2}')
@@ -74,8 +76,21 @@ class NAT(LogicalBase):
         self.external_mac = external_mac
         self.logical_ip = logical_ip
         self.logical_port = logical_port
-        self.type = type
+        nat_type_tup = ("snat", "dnat", "dnat_and_snat")
+        if type in nat_type_tup:
+            self.type = type
+        else:
+            raise Exception("wrong type")
 
+class RouterStaticRoute(LogicalBase):
+    def __init__(self,_uuid, external_ids=None, ip_prefix=None,
+                 nexthop =None, output_port=None, policy=None):
+        LogicalBase.__init__(self,_uuid)
+        self.external_ids = external_ids
+        self.ip_prefix = ip_prefix
+        self.nexthop = nexthop
+        self.output_port = output_port
+        self.policy = policy
 
 class SwitchPort(LogicalBase):
     """
@@ -173,7 +188,11 @@ class Switch(LogicalBase):
         run_command(cmd, check_exit_code=True)
 
     def _set_addresses(self, port):
-        cmd = ['ovn-nbctl', 'lsp-set-addresses', port.name, port.addresses]
+        cmd = ['ovn-nbctl', 'lsp-set-addresses', port.name]
+        if isinstance(port.addresses,str):
+            cmd.append(port.addresses)
+        if isinstance(port.addresses, list):
+            cmd.extend(port.addresses)
         run_command(cmd, check_exit_code=True)
 
     def set_port_security(self, port):
@@ -257,6 +276,7 @@ class Router(LogicalBase):
             cmd.append(port.network)
         if port.peer is not None:
             cmd.append("peer="+port.peer)
+        print(cmd)
         run_command(cmd, check_exit_code=True)
 
     def add_ports(self, port_list):
@@ -283,15 +303,14 @@ class Router(LogicalBase):
             cmd.append(prefix)
         run_command(cmd, check_exit_code=True)
 
-    def add_nat(self, nat_type, external_ip, logical_ip, logical_port=None, external_mac=None):
-        nat_type_tup = ("snat", "dnat", "dnat_and_snat")
-        if nat_type not in nat_type_tup:
-            raise Exception("wrong type")
-        cmd = ['ovn-nbctl', 'lr-nat-add', self.name, nat_type, external_ip, logical_ip]
-        if logical_port is not None:
-            cmd.append(logical_port)
-        if external_mac is not None:
-            cmd.append(external_mac)
+    def add_nat(self, nat):
+        if not isinstance(nat, NAT):
+            raise Exception("type")
+        cmd = ['ovn-nbctl', 'lr-nat-add', self.name, nat.type, nat.external_ip, nat.logical_ip]
+        if nat.logical_port is not None:
+            cmd.append(nat.logical_port)
+        if nat.external_mac is not None:
+            cmd.append(nat.external_mac)
         run_command(cmd, check_exit_code=True)
 
 
