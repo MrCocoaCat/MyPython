@@ -58,6 +58,9 @@ def clean(num):
     os.system(cmd)
     cmd = "ovn-nbctl --all destroy DHCP_Options"
     os.system(cmd)
+
+    cmd = "ovn-nbctl --all destroy Logical_Router"
+    os.system(cmd)
     # cmd = ['ovs-vsctl', 'list-ports', 'br-int']
     # run_command(cmd, check_exit_code=False)
     # for port in re.split():
@@ -99,7 +102,7 @@ def domain(logic_port, num):
 def start(num):
     dhcp1 = DHCP(cidr="10.0.1.0/24",
                  server_id='10.0.1.254',
-                 server_mac='00:00:00:00:02:00',
+                 server_mac=GenerateMac(),
                  router='10.0.1.254',
                  lease_time='3600', )
     ovn = OvnNb()
@@ -108,18 +111,36 @@ def start(num):
         print(i)
         s1 = Switch(name="s"+str(i), other_config="subnet=10.0.1.0/24")
         ovn.add_switch(s1)
+        port_pr = SwitchPort(name="pr_peer"+str(i), type="router", addresses="router",
+                             options={'router-port': "pr" + str(i)})
         port1 = SwitchPort(name="p"+str(i), addresses="dynamic", dhcpv4_options=dhcp1)
         port2 = SwitchPort(name="p"+str(i+1), addresses="dynamic", dhcpv4_options=dhcp1)
-        s1.add_ports([port1, port2])
+        s1.add_ports([port_pr, port1, port2])
         domain(port1, i)
         domain(port2, i+1)
+
+        r1 = Router(name="r"+str(i))
+        ovn.add_router(r1)
+        out = RoutePort(name="out"+str(i), mac=GenerateMac(), network="192.168.125.124",
+                        peer="out_peer"+str(i))
+        port_p = RoutePort(name="pr" + str(i), mac=GenerateMac(), network="10.0.1.154",
+                           peer="pr_peer" + str(i))
+        r1.add_ports([port_p, out])
+
+        outside = Switch(name="outside")
+        ovn.add_switch(outside)
+        outside_localnet = SwitchPort(name="outside-localnet", type="localnet", addresses="unknown",
+                          options={'network_name': 'dataNet'})
+        port = SwitchPort(name="out_peer" + str(i + 1), type="router", addresses="router",
+                          options={'router-port': "out" + str(i)})
+        outside.add_ports([port, outside_localnet])
 
 
 if __name__ == '__main__':
     choices = {'c': clean, 's': start}
     parser = argparse.ArgumentParser()
     parser.add_argument("do", type=str, help="define what to do", default='s')
-    parser.add_argument("-n", type=int, help="number", default=5)
+    parser.add_argument("-n", type=int, help="number", default=2)
     args = parser.parse_args()
     function = choices[args.do]
     function(args.n+1)

@@ -7,6 +7,15 @@
 
 import yaml
 from tools.install_venv import run_command
+import re
+
+num = 1
+def GenerateMac():
+    global num
+    num += 1
+    pattern = re.compile('.{2}')
+    mac = ':'.join(pattern.findall(str("%012x" % num)))
+    return mac
 
 
 class LogicalBase:
@@ -50,6 +59,18 @@ class LogicalBase:
                 return str(l[1])
         else:
             return l
+
+
+class NAT(LogicalBase):
+    def __init__(self, _uuid=None, external_ids=None, external_ip=None, external_mac=None,
+                 logical_ip=None, logical_port=None, type=None):
+        LogicalBase.__init__(self, _uuid)
+        self.external_ids = external_ids
+        self.external_ip = external_ip
+        self.external_mac = external_mac
+        self.logical_ip = logical_ip
+        self.logical_port = logical_port
+        self.type = type
 
 
 class SwitchPort(LogicalBase):
@@ -129,8 +150,9 @@ class Switch(LogicalBase):
         self._set_options(port)
         self._set_dhcpv4_options(port)
         port.syn()
-        self.set_port_security(port)
-        port.syn()
+        if port.addresses == 'dynamic':
+            self.set_port_security(port)
+            port.syn()
 
     def add_ports(self, ports_list):
         for port in ports_list:
@@ -145,7 +167,6 @@ class Switch(LogicalBase):
             raise Exception("wrong type")
         cmd = ['ovn-nbctl', 'lsp-del', self.name, port_name]
         run_command(cmd, check_exit_code=True)
-        self.ports.pop(port)
 
     def _set_addresses(self, port):
         cmd = ['ovn-nbctl', 'lsp-set-addresses', port.name, port.addresses]
@@ -159,7 +180,7 @@ class Switch(LogicalBase):
         if not isinstance(port, SwitchPort):
             raise Exception("wrong type")
         if not isinstance(port.dhcpv4_options, str):
-            raise Exception("wrong type")
+            return
 
         cmd = ['ovn-nbctl', 'lsp-set-dhcpv4-options', port.name, port.dhcpv4_options]
         re = run_command(cmd, check_exit_code=True)
@@ -186,19 +207,24 @@ class Switch(LogicalBase):
         run_command(cmd, check_exit_code=True)
 
 
-class RoutePort:
-    def __init__(self,enabled, external_ids, load_balancer,name, nat , options , mac=None, peer=None):
-
+class RoutePort(LogicalBase):
+    def __init__(self, name, _uuid=None, enabled=None, external_ids=None, gateway_chassis=None,
+                 ipv6_ra_configs=None, mac=None, network=None, options=None, peer=None):
+        LogicalBase.__init__(self, _uuid)
         self.name = name
-        self.enabled =enabled
-        self.external_ids =external_ids
-        self.load_balancer =load_balancer
-        self.nat =nat
+        self.enabled = enabled or []
+        self.external_ids = external_ids or {}
+        self.gateway_chassis = gateway_chassis or []
+        self.ipv6_ra_configs = ipv6_ra_configs or {}
+        self.mac = mac or ""
+        self.network = network or []
+        self.options = options
+        self.peer = peer
 
 
 class Router(LogicalBase):
-    def __init__(self, _uuid, enabled=None, external_ids=None, load_balancer=None,name=None, nat=None
-                 , options=None , ports=None, static_routes=None):
+    def __init__(self, _uuid=None, enabled=None, external_ids=None, load_balancer=None,name=None, nat=None
+                 , options=None, ports=None, static_routes=None):
         LogicalBase.__init__(self, _uuid)
         self.name = name
         self.enabled = enabled or []
@@ -209,31 +235,17 @@ class Router(LogicalBase):
         self.ports = ports or []
         self.static_routes =static_routes or []
 
-    def _syn_ports(self):
-        cmd = ['ovn-nbctl', 'lsp-list', self.name]
-        res = run_command(cmd, check_exit_code=True)
-        lines = res.splitlines()
-        for line in lines:
-            ltemp = line.split()
-            name = ltemp[1].strip('()')
-            uuid = ltemp[0]
-            s = SwitchPort(name=name, uuid=uuid)
-
-
-    def _syn_nats(self):
-        pass
-
-    def _syn_routes(self):
-        pass
-
     def add_port(self, port):
         if not isinstance(port, RoutePort):
             raise Exception("wrong type")
-        cmd = ['ovn-nbctl', 'lrp-add', self.name, port.name, port.mac, port.ip]
+        cmd = ['ovn-nbctl', 'lrp-add', self.name, port.name, port.mac]
+        if isinstance(port.network, list):
+            cmd.extend(port.network)
+        if isinstance(port.network, str):
+            cmd.append(port.network)
         if port.peer is not None:
             cmd.append("peer="+port.peer)
         run_command(cmd, check_exit_code=True)
-        self._ports_list.append(port)
 
     def add_ports(self, port_list):
         for port in port_list:
@@ -244,9 +256,8 @@ class Router(LogicalBase):
             raise Exception("wrong type")
         cmd = ['ovn-nbctl', 'lrp-del', self.name, port.name]
         run_command(cmd, check_exit_code=True)
-        self._ports_list.pop(port)
 
-    def del_ports(self,port_list):
+    def del_ports(self, port_list):
         for port in port_list:
             self.del_port(port)
 
@@ -294,6 +305,7 @@ class DHCP(LogicalBase):
         re = run_command(cmd, check_exit_code=True)
         return re
 
+
 class OvnNb:
     def __init__(self):
         self.switch_dict = {}
@@ -335,7 +347,20 @@ class OvnNb:
         data_dict = dict(zip(head, data))
         return Switch(name, data_dict=data_dict)
 
-
+    def add_router(self, router):
+        if not isinstance(router, Router):
+            raise Exception("wrong ")
+        cmd = ['ovn-nbctl', 'create', 'Logical_Router']
+        for key, val in router.__dict__.items():
+            if key == "_uuid":
+                continue
+            if val:
+                option = key + "=" + str(val)
+                cmd.append(option)
+        uuid = run_command(cmd).strip('\n')
+        router.set_uuid(uuid)
+        self.switch_dict.setdefault(uuid, router.name)
+        return router
 
 
 
