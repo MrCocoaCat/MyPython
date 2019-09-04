@@ -3,9 +3,10 @@
 # @Author  : MrCocoaCat
 # @Email   : MrCocoaCat@aliyun.com
 # @File    : super.py
+import abc
 
 
-class A:
+class A(metaclass=abc.ABCMeta):
     obj_dic = {}
 
     def __init__(self):
@@ -15,10 +16,10 @@ class A:
     @staticmethod
     def create(id):
         return A.obj_dic.setdefault(id, B(id))
-        #return B(id)
 
+    @abc.abstractmethod
     def mul(self):
-        print(self.a**2)
+        pass
 
     def __del__(self):
         print('del A')
@@ -33,6 +34,9 @@ class B(A):
     def __del__(self):
         print('del B')
 
+    def mul(self):
+        print(self.id ** 2)
+
 
 class C(A):
     def __init__(self):
@@ -41,6 +45,8 @@ class C(A):
 
 
 if __name__ == '__main__':
+
+    a = A()
     b = A.create(1)
     print(b)
     b.id = 888
