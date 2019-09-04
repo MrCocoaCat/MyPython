@@ -6,12 +6,22 @@
 import abc
 
 
+class TEA:
+    def __init__(self):
+        print("init TEA")
+        self.a = 123
+
+    def ff(self):
+        print("dsds")
+
+
 class A(metaclass=abc.ABCMeta):
     obj_dic = {}
 
     def __init__(self):
         print('init A')
         self.a = 2
+        self.b = TEA()
 
     @staticmethod
     def create(id):
@@ -37,6 +47,9 @@ class B(A):
     def mul(self):
         print(self.id ** 2)
 
+    def tea(self):
+        print(self.b)
+
 
 class C(A):
     def __init__(self):
@@ -46,21 +59,26 @@ class C(A):
 
 if __name__ == '__main__':
 
-    a = A()
+    #a = A()
     b = A.create(1)
     print(b)
     b.id = 888
+    b.tea()
     print(b.id)
 
     b = A.create(1)
     print(b)
+    b.tea()
     print(b.id)
 
     b = A.create(8)
+    b.tea()
     print(b)
 
     b = A.create(1)
     print(b)
+    b.tea()
     print(b.id)
 
+    print(A.obj_dic)
     #b.mul()
