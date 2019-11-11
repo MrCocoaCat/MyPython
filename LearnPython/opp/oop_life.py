@@ -4,6 +4,7 @@
 # @Email   : MrCocoaCat@aliyun.com
 # @File    : super.py
 import abc
+import six
 
 
 class TEA:
@@ -15,7 +16,8 @@ class TEA:
         print("dsds")
 
 
-class A(metaclass=abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class A:
     obj_dic = {}
 
     def __init__(self):
@@ -25,7 +27,11 @@ class A(metaclass=abc.ABCMeta):
 
     @staticmethod
     def create(id):
-        return A.obj_dic.setdefault(id, B(id))
+        if id in A.obj_dic.keys():
+            return A.obj_dic[id]
+        else:
+            A.obj_dic.setdefault(id, B(id))
+            return A.obj_dic[id]
 
     @abc.abstractmethod
     def mul(self):
@@ -50,6 +56,13 @@ class B(A):
     def tea(self):
         print(self.b)
 
+    # def __str__(self):
+    #   return str(self.__class__) + str(hex(id(self)))
+
+    #def __repr__(self):
+    #    return str(self.id)
+
+
 
 class C(A):
     def __init__(self):
@@ -63,22 +76,25 @@ if __name__ == '__main__':
     b = A.create(1)
     print(b)
     b.id = 888
-    b.tea()
-    print(b.id)
+    print(20 * "*")
+    #b.tea()
+    #print(b.id)
 
     b = A.create(1)
     print(b)
-    b.tea()
-    print(b.id)
+    print(20 * "*")
+    #b.tea()
+    #print(b.id)
 
     b = A.create(8)
-    b.tea()
+    #b.tea()
     print(b)
+    print(20 * "*")
 
     b = A.create(1)
     print(b)
-    b.tea()
-    print(b.id)
-
+    #b.tea()
+    #print(b.id)
+    print(20*"*")
     print(A.obj_dic)
     #b.mul()
