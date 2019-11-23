@@ -1,19 +1,39 @@
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED, FIRST_COMPLETED
 import time
+from queue import Queue
+import threading
+
+queue = Queue()
+lock = threading.Lock()
+x = 0
+
 
 def return_future(msg):
-    time.sleep(3)
+    if not queue.empty():
+        num = queue.get()
+        print(num)
+        time.sleep(0.1)
+        # queue.put(num)
+    else:
+        print("empty")
+        #print("size %s" % queue.qsize())
+        #lock.acquire()
+        global x
+        x += 2
+        print("x %s " % x)
+        return
+        for j in range(x-2, x):
+            queue.put(j)
+        #lock.release()
+        num = queue.get()
+        print(num)
     return msg
 
-pool = ThreadPoolExecutor(max_workers=2)
 
-f1 = pool.submit(return_future,'hello1')
-f2 = pool.submit(return_future,'hello2')
+if __name__ == '__main__':
+    pool = ThreadPoolExecutor(max_workers=300)
+    all_task = [pool.submit(return_future, i) for i in range(2000)]
+    # print(all_task)
+    wait(all_task, return_when=ALL_COMPLETED)
 
-# 等待执行完毕
-print(f1.done())
-print(f2.done())
 
-# 结果
-print(f1.result())
-print(f2.result())
