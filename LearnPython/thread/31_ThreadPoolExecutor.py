@@ -17,21 +17,20 @@ def return_future(msg):
     else:
         print("empty")
         #print("size %s" % queue.qsize())
-        #lock.acquire()
+        lock.acquire()
         global x
         x += 2
         print("x %s " % x)
-        return
         for j in range(x-2, x):
             queue.put(j)
-        #lock.release()
+        lock.release()
         num = queue.get()
         print(num)
     return msg
 
 
 if __name__ == '__main__':
-    pool = ThreadPoolExecutor(max_workers=300)
+    pool = ThreadPoolExecutor(max_workers=5)
     all_task = [pool.submit(return_future, i) for i in range(2000)]
     # print(all_task)
     wait(all_task, return_when=ALL_COMPLETED)

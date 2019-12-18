@@ -19,9 +19,9 @@ def main():
     print("start at",time.ctime())
 
     t1 = threading.Thread(target=loop1, args=("a",))
-    # 守护线程，在主线程结束时自动结束运行
+
     t1.setDaemon(True)
-    # 设置线程名称
+
     t1.setName("TH1")
     t1.start()
 
@@ -29,7 +29,7 @@ def main():
     t2.start()
     t2.setName("TH2")
 
-    #现在运行的所有线程 enumerate()
+
     for thr in threading.enumerate():
         print(thr.getName())
 
