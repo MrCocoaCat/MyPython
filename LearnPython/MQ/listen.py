@@ -10,9 +10,10 @@ import stomp
 
 class MyListener(stomp.ConnectionListener):
 
-    def __init__(self, print_to_log=False, con=None):
+    def __init__(self, print_to_log=False, con=None, queue=None):
         self.print_to_log = print_to_log
-        self.conn = con
+        self._conn = con
+        self._queue = queue
 
     def __print(self, msg, *args):
         print(msg % args)
@@ -56,13 +57,14 @@ class MyListener(stomp.ConnectionListener):
         # self.__print('on_message %s %s', headers, body)
         # message_id = headers['message-id']
         ack_id = headers.setdefault('message-id', None)
-        subscription = headers.setdefault('subscription',None)
+        subscription = headers.setdefault('subscription', None)
         # print(message_id)
-        time.sleep(1)
-        print(" finish %s" % body)
+        # time.sleep(1)
+
+        # print(" finish %s" % body)
         if ack_id and subscription:
-            self.conn.ack(ack_id,subscription)
-            print("ack %s " % ack_id)
+            self._conn.ack(ack_id, subscription)
+            #print("ack %s " % ack_id)
 
 
     def on_receipt(self, headers, body):

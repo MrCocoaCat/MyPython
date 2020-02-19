@@ -9,9 +9,10 @@ import stomp
 
 conn = stomp.Connection12([('192.168.83.132', 61613)])
 conn.connect('admin', 'password', wait=True)
-for i in range(1000):
-    mes = 'This is  %s' % str(i)
-    conn.send(body=mes, destination='/topic/topic1')
-    time.sleep(1)
+i = 0
+while True:
+    i += 1
+    mes = str(i)
+    conn.send(body=mes, destination='q1')
     print("send %s" % mes)
 conn.disconnect()
