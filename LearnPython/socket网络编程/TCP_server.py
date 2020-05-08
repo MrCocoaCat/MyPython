@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 import socket
+
 def tcp_srv():
     # 1. 创建socket
     # SOCK_STREAM表示其为TCP 模式

@@ -2,6 +2,7 @@ import threading
 import time
 import queue
 
+
 class Producer(threading.Thread):
     def run(self):
         global queue
@@ -15,6 +16,7 @@ class Producer(threading.Thread):
                     print(msg)
             time.sleep(0.5)
 
+
 class Consumer(threading.Thread):
     def run(self):
         global queue
@@ -24,6 +26,7 @@ class Consumer(threading.Thread):
                     msg = self.name + "consum" + queue.get()
                     print(msg)
             time.sleep(1)
+
 
 if __name__=='__main':
     quene = queue.Quene()
